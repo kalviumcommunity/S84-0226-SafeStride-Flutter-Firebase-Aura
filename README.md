@@ -56,7 +56,7 @@ Future iterations will expand into route safety scoring, user reviews, and perso
 
 This sprint focuses on integrating Firebase as the backend for SafeStride’s mobile experience. The goal is to demonstrate real-time data synchronization and a scalable cloud-connected architecture using Flutter and Firebase.
 
-### What Was Implemented
+### What will be Implemented
 
 - Firebase project setup and app registration  
 - FlutterFire configuration  
@@ -84,16 +84,57 @@ This demonstrates the reactive and real-time capabilities required for SafeStrid
 
 ## Demo
 
-The current MVP proves:
-
-- Successful Firebase connectivity  
-- Real-time Firestore updates  
-- Reactive Flutter UI behavior  
-
-Screenshots and video walkthrough are provided below for verification.
+![alt text](image.png)
 
 ---
 
 ## Reflection
 
 Firebase significantly reduces backend complexity by providing authentication, real-time database capabilities, and scalable infrastructure out of the box. This allows SafeStride to focus on delivering a responsive, community-powered routing experience while maintaining a production-ready foundation.
+
+## 📁 Project Structure
+
+```
+lib/
+├── main.dart
+├── firebase_options.dart
+├── screens/
+       ├──welcome_screen.dart 
+├── widgets/
+       ├──custom_button.dart
+├── models/
+├── services/
+```
+
+---
+
+## 🧩 Purpose of Each Directory
+
+- **main.dart** — Entry point of the app and root configuration  
+- **screens/** — Full UI pages (each file = one screen)  
+- **widgets/** — Reusable UI components  
+- **models/** — Data structures and JSON mapping  
+- **services/** — Firebase/API interaction layer  
+- **utils/** — Helper functions, constants, and validators  
+
+---
+
+## 🏗️ How This Supports Modular Design
+
+This structure separates UI, data, and service logic into independent layers.  
+It improves readability, enables code reuse, and makes the app easier to scale and maintain as new features are added.
+
+---
+
+## 🧷 Naming Conventions
+
+- **Files:** `snake_case.dart` → `welcome_screen.dart`  
+- **Classes:** `PascalCase` → `WelcomeScreen`  
+- **Variables/Functions:** `camelCase` → `isLoading`, `fetchRoutes()`  
+- **Widgets:** Screens end with `Screen`; reusable widgets have descriptive names.
+
+---
+
+## 🎯 Why This Matters
+
+A consistent structure and naming convention keeps the codebase clean, scalable, and team-friendly for future development.
