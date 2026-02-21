@@ -25,7 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(content: Text(e is AuthFailure ? e.message : 'Signup failed. Please try again.')),
         );
       }
     } finally {

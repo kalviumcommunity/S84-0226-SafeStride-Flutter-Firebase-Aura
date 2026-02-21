@@ -5,12 +5,14 @@ import 'login_screen.dart';
 import 'route_dashboard_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  final Stream<User?>? authStream;
+
+  const AuthWrapper({super.key, this.authStream});
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: AuthService().authStateChanges,
+      stream: authStream ?? AuthService().authStateChanges,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));

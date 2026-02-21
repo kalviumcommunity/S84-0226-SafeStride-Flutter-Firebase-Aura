@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'screens/auth_wrapper.dart';
 
@@ -12,7 +13,9 @@ void main() async {
 }
 
 class SafeStrideApp extends StatelessWidget {
-  const SafeStrideApp({super.key});
+  final Stream<User?>? authStream;
+
+  const SafeStrideApp({super.key, this.authStream});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +26,7 @@ class SafeStrideApp extends StatelessWidget {
         primarySwatch: Colors.indigo,
         useMaterial3: true,
       ),
-      home: const AuthWrapper(),
+      home: AuthWrapper(authStream: authStream),
     );
   }
 }
