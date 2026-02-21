@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'safestride-ed8a1.firebasestorage.app',
     measurementId: 'G-X7H921MQPX',
   );
+
 }
