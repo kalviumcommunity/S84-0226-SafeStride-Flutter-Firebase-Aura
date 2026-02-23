@@ -82,7 +82,7 @@ class ResponsiveHome extends StatelessWidget {
   }) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
+       padding: EdgeInsets.symmetric(
         horizontal: horizontalPadding,
         vertical: 20,
       ),
