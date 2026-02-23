@@ -225,3 +225,24 @@ StreamBuilder<QuerySnapshot>(
    - Edit the document directly in the Firebase Console and point out the emulator updating instantly (without app interaction).
 4. **1:15 - 1:30 (Logout)**
    - Click logout; app instantly streams state change and returns to Login.
+
+---
+
+## Assignment 3.12: Flutter Folder Structure Exploration
+
+### Overview
+Understanding the default Flutter folder structure is critical for maintaining clean code, ensuring scalability, and collaborating efficiently in a team environment. By organizing the project properly, we decouple platform-specific code (Android/iOS) from our core Dart logic (`lib/`).
+
+For a complete breakdown of each folder and file's purpose, see the dedicated documentation: [PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
+
+### Folder Hierarchy Snapshot
+*(Screenshot placeholder: Replace `IDE_hierarchy.png` with a screenshot of your VS Code / Android Studio project tree.)*
+
+`![Folder Hierarchy](docs/assets/IDE_hierarchy.png)`
+
+### Reflection
+**Why is it important to understand each folder's purpose?**
+A strong grasp of the project structure prevents developers from mixing business logic with platform configurations. When you know where to update metadata (e.g., `AndroidManifest.xml` or `Info.plist`), where to place assets (`assets/`), and where to write code (`lib/`), debugging becomes exponentially faster.
+
+**How does a well-organized structure improve teamwork and development speed?**
+In team environments, modular structures (like separating `models`, `services`, and `screens` inside the `lib/` folder) minimize git merge conflicts. It creates a predictable environment where new engineers can effortlessly locate features, update UI without breaking backend services, and rapidly onboard to the project.
