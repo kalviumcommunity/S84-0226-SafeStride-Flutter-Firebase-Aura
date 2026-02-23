@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'firebase_options.dart';
+import 'screens/auth_wrapper.dart';
+
+// UI Screens
 import 'screens/map_screen.dart';
 import 'screens/discover_screen.dart';
 import 'screens/add_route_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/route_detail_screen.dart';
+
 import 'models/route_model.dart';
 import 'constants/app_colors.dart';
 
@@ -15,25 +21,39 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+
+  runApp(
+    SafeStrideApp(
+      authStream: FirebaseAuth.instance.authStateChanges(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SafeStrideApp extends StatelessWidget {
+  final Stream<User?>? authStream;
+
+  const SafeStrideApp({super.key, this.authStream});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TrailSync',
+      title: 'SafeStride',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.neonGreen),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: AuthWrapper(
+        authStream: authStream,
+        child: const MainScreen(),
+      ),
     );
   }
 }
+
+/* =======================
+        MAIN UI
+======================= */
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -137,9 +157,7 @@ class _MainScreenState extends State<MainScreen> {
             constraints: const BoxConstraints(maxWidth: 448),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             decoration: BoxDecoration(
-              color: _isDarkMode
-                  ? AppColors.mediumBlue
-                  : Colors.white,
+              color: _isDarkMode ? AppColors.mediumBlue : Colors.white,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
@@ -152,11 +170,11 @@ class _MainScreenState extends State<MainScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildNavItem(Icons.map, 'Map', 0),
-                _buildNavItem(Icons.explore, 'Discover', 1),
-                _buildFAB(),
-                _buildNavItem(Icons.notifications, 'Alerts', 3),
-                _buildNavItem(Icons.person, 'Profile', 4),
+                _buildNavItem(Icons.map, 0),
+                _buildNavItem(Icons.explore, 1),
+                _buildNavItem(Icons.add_circle, 2),
+                _buildNavItem(Icons.notifications, 3),
+                _buildNavItem(Icons.person, 4),
               ],
             ),
           ),
@@ -165,72 +183,18 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, int index) {
+  Widget _buildNavItem(IconData icon, int index) {
     final isActive = _activeTab == index;
+
     return GestureDetector(
       onTap: () => setState(() => _activeTab = index),
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isActive
-                  ? AppColors.neonGreen
-                  : _isDarkMode
-                      ? Colors.grey[400]
-                      : Colors.grey[500],
-              size: 24,
-            ),
-            if (isActive)
-              Container(
-                margin: const EdgeInsets.only(top: 4),
-                width: 4,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.neonGreen,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.neonGreen.withOpacity(0.8),
-                      blurRadius: 8,
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFAB() {
-    final isActive = _activeTab == 2;
-    return GestureDetector(
-      onTap: () => setState(() => _activeTab = 2),
-      child: Transform.translate(
-        offset: const Offset(0, -32),
-        child: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: AppColors.neonGradient,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.neonGreen.withOpacity(isActive ? 0.6 : 0.4),
-                blurRadius: isActive ? 24 : 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(
-            Icons.add_circle,
-            color: AppColors.textDark,
-            size: isActive ? 28 : 24,
-          ),
-        ),
+      child: Icon(
+        icon,
+        color: isActive
+            ? AppColors.neonGreen
+            : _isDarkMode
+                ? Colors.grey[400]
+                : Colors.grey[500],
       ),
     );
   }
