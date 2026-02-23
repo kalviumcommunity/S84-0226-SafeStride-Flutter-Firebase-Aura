@@ -14,6 +14,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   void toggleState() {
     setState(() {
       isClicked = !isClicked;
+      debugPrint('Button pressed. isClicked = $isClicked');
     });
   }
 
@@ -30,23 +31,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           children: [
             Text(
               isClicked
-                  ? 'Ready to explore safe routes!'
-                  : 'Welcome to Route Safe 🚴',
+                  ? 'Hot Reload Successful 🚀'
+                  : 'Welcome to Flutter DevTools Demo',
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 30),
-            Icon(
-              Icons.directions_bike,
-              size: 100,
-              color: isClicked ? Colors.green : Colors.blue,
-            ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             CustomButton(
-              text: 'Get Started',
+              text: isClicked ? 'Reset' : 'Click Me',
               onPressed: toggleState,
             ),
           ],
