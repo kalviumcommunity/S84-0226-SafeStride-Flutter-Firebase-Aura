@@ -136,69 +136,94 @@ class ProfileScreen extends StatelessWidget {
           ),
           // Settings Section
           Expanded(
-            child: ListView(
+            child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              children: [
-                Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? AppColors.mediumBlue : Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
+              itemCount: MockData.routes.length + 4, // +4 for settings section, headers, and spacing
+              itemBuilder: (context, index) {
+                // Settings header
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : AppColors.textDark,
                       ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildSettingItem(
-                        icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                        title: isDarkMode ? 'Dark Mode' : 'Light Mode',
-                        trailing: Switch(
-                          value: isDarkMode,
-                          onChanged: (_) => onToggleDarkMode(),
-                          activeColor: AppColors.neonGreen,
-                        ),
-                        onTap: onToggleDarkMode,
+                    ),
+                  );
+                }
+                
+                // Settings card
+                if (index == 1) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 32),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? AppColors.mediumBlue : Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
                       ),
-                      _buildDivider(),
-                      _buildSettingItem(
-                        icon: Icons.notifications,
-                        title: 'Notifications',
-                        trailing: const Icon(Icons.chevron_right),
+                      child: Column(
+                        children: [
+                          _buildSettingItem(
+                            icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                            title: isDarkMode ? 'Dark Mode' : 'Light Mode',
+                            trailing: Switch(
+                              value: isDarkMode,
+                              onChanged: (_) => onToggleDarkMode(),
+                              activeColor: AppColors.neonGreen,
+                            ),
+                            onTap: onToggleDarkMode,
+                          ),
+                          _buildDivider(),
+                          _buildSettingItem(
+                            icon: Icons.notifications,
+                            title: 'Notifications',
+                            trailing: const Icon(Icons.chevron_right),
+                          ),
+                          _buildDivider(),
+                          _buildSettingItem(
+                            icon: Icons.shield,
+                            title: 'Privacy & Safety',
+                            trailing: const Icon(Icons.chevron_right),
+                          ),
+                        ],
                       ),
-                      _buildDivider(),
-                      _buildSettingItem(
-                        icon: Icons.shield,
-                        title: 'Privacy & Safety',
-                        trailing: const Icon(Icons.chevron_right),
+                    ),
+                  );
+                }
+                
+                // Saved Routes header
+                if (index == 2) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Saved Routes',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : AppColors.textDark,
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Saved Routes',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...MockData.routes.map((route) => _buildSavedRouteCard(route)).toList(),
-                const SizedBox(height: 100),
-              ],
+                    ),
+                  );
+                }
+                
+                // Bottom spacing
+                if (index == MockData.routes.length + 3) {
+                  return const SizedBox(height: 100);
+                }
+                
+                // Saved route cards
+                final route = MockData.routes[index - 3];
+                return _buildSavedRouteCard(route);
+              },
             ),
           ),
         ],

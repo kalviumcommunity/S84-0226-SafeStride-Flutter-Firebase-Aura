@@ -84,21 +84,31 @@ class AlertsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           // Alerts List
           Expanded(
-            child: ListView(
+            child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              children: [
-                Text(
-                  'Recent Alerts',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...MockData.alerts.map((alert) => _buildAlertCard(alert)).toList(),
-                const SizedBox(height: 100),
-              ],
+              itemCount: MockData.alerts.length + 2, // +2 for header and bottom spacing
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Recent Alerts',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDarkMode ? Colors.white : AppColors.textDark,
+                      ),
+                    ),
+                  );
+                }
+                
+                if (index == MockData.alerts.length + 1) {
+                  return const SizedBox(height: 100);
+                }
+                
+                final alert = MockData.alerts[index - 1];
+                return _buildAlertCard(alert);
+              },
             ),
           ),
         ],
