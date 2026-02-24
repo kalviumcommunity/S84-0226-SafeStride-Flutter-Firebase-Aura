@@ -6,9 +6,9 @@ import 'screens/discover_screen.dart';
 import 'screens/add_route_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/route_detail_screen.dart';
 import 'models/route_model.dart';
 import 'constants/app_colors.dart';
+import 'config/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,12 +25,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'TrailSync',
+      title: 'SafeStride',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.neonGreen),
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      // Named routes configuration
+      initialRoute: AppRoutes.home,
+      onGenerateRoute: RouteGenerator.generateRoute,
     );
   }
 }
@@ -45,14 +47,17 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _activeTab = 0;
   bool _isDarkMode = false;
-  RouteModel? _selectedRoute;
 
   void _handleRouteSelect(RouteModel route) {
-    setState(() => _selectedRoute = route);
-  }
-
-  void _handleBackToMap() {
-    setState(() => _selectedRoute = null);
+    // Use Navigator.pushNamed with arguments
+    Navigator.pushNamed(
+      context,
+      AppRoutes.routeDetail,
+      arguments: RouteDetailArguments(
+        route: route,
+        isDarkMode: _isDarkMode,
+      ),
+    );
   }
 
   void _toggleDarkMode() {
@@ -60,14 +65,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _renderScreen() {
-    if (_selectedRoute != null) {
-      return RouteDetailScreen(
-        route: _selectedRoute!,
-        onBack: _handleBackToMap,
-        isDarkMode: _isDarkMode,
-      );
-    }
-
     switch (_activeTab) {
       case 0:
         return MapScreen(
@@ -118,7 +115,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Stack(
           children: [
             _renderScreen(),
-            if (_selectedRoute == null) _buildBottomNav(),
+            _buildBottomNav(),
           ],
         ),
       ),
