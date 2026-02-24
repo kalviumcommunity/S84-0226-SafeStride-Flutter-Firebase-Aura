@@ -7,17 +7,16 @@ import 'screens/responsive_home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase Core initialization (DO NOT REMOVE)
+  // Firebase Core initialization
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  runApp(const SafeStrideApp());
 }
 
-/// Root widget with Material3 theme
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SafeStrideApp extends StatelessWidget {
+  const SafeStrideApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,3 +32,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
