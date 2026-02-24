@@ -15,22 +15,87 @@ class AddRouteScreen extends StatefulWidget {
 
 class _AddRouteScreenState extends State<AddRouteScreen> {
   int step = 1;
-  String routeName = '';
   String? routeType;
-  String distance = '';
+  
+  // Form key for validation
+  final _formKey = GlobalKey<FormState>();
+  
+  // Text editing controllers
+  final _routeNameController = TextEditingController();
+  final _distanceController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  @override
+  void dispose() {
+    _routeNameController.dispose();
+    _distanceController.dispose();
+    _emailController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   void handleSubmit() {
-    setState(() => step = 4);
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          step = 1;
-          routeName = '';
-          routeType = null;
-          distance = '';
-        });
-      }
-    });
+    if (_formKey.currentState?.validate() ?? false) {
+      _formKey.currentState?.save();
+      
+      // Show success feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.neonGreen),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Route "${_routeNameController.text}" submitted successfully!',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: widget.isDarkMode ? AppColors.mediumBlue : AppColors.primaryBlue,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      
+      setState(() => step = 4);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            step = 1;
+            routeType = null;
+            _routeNameController.clear();
+            _distanceController.clear();
+            _emailController.clear();
+            _descriptionController.clear();
+          });
+        }
+      });
+    } else {
+      // Show validation error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Please fix the errors before submitting',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.red[700],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
   }
 
   @override
@@ -244,113 +309,263 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   Widget _buildStep1() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Route Name',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          onChanged: (value) => setState(() => routeName = value),
-          style: TextStyle(
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-          ),
-          decoration: InputDecoration(
-            hintText: 'Enter route name',
-            hintStyle: TextStyle(
-              color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Route Name',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
             ),
-            filled: true,
-            fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _routeNameController,
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
             ),
-            contentPadding: const EdgeInsets.all(16),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Route Type',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _buildRouteTypeCard('runner', '🏃‍♂️', 'Runner')),
-            const SizedBox(width: 16),
-            Expanded(child: _buildRouteTypeCard('cyclist', '🚴‍♀️', 'Cyclist')),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Distance (km)',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-          ),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          onChanged: (value) => setState(() => distance = value),
-          keyboardType: TextInputType.number,
-          style: TextStyle(
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-          ),
-          decoration: InputDecoration(
-            hintText: '0.0',
-            hintStyle: TextStyle(
-              color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
-            ),
-            filled: true,
-            fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: const EdgeInsets.all(16),
-          ),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: routeName.isNotEmpty && routeType != null && distance.isNotEmpty
-                ? () => setState(() => step = 2)
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.neonGreen,
-              foregroundColor: AppColors.textDark,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              shape: RoundedRectangleBorder(
+            decoration: InputDecoration(
+              hintText: 'Enter route name',
+              hintStyle: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
               ),
-              elevation: 8,
-              disabledBackgroundColor:
-                  widget.isDarkMode ? AppColors.mediumBlue : Colors.grey[200],
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[400]!, width: 2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[600]!, width: 2),
+              ),
+              contentPadding: const EdgeInsets.all(16),
             ),
-            child: const Text(
-              'Continue',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter a route name';
+              }
+              if (value.trim().length < 3) {
+                return 'Route name must be at least 3 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Contact Email',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+            decoration: InputDecoration(
+              hintText: 'example@email.com',
+              hintStyle: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[400]!, width: 2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[600]!, width: 2),
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter your email';
+              }
+              // Email regex pattern
+              final emailRegex = RegExp(
+                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+              );
+              if (!emailRegex.hasMatch(value.trim())) {
+                return 'Please enter a valid email address';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Route Type',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildRouteTypeCard('runner', '🏃‍♂️', 'Runner')),
+              const SizedBox(width: 16),
+              Expanded(child: _buildRouteTypeCard('cyclist', '🚴‍♀️', 'Cyclist')),
+            ],
+          ),
+          if (routeType == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Please select a route type',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.red[400],
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+          Text(
+            'Distance (km)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _distanceController,
+            keyboardType: TextInputType.number,
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+            decoration: InputDecoration(
+              hintText: '0.0',
+              hintStyle: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[400]!, width: 2),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.red[600]!, width: 2),
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter distance';
+              }
+              final distance = double.tryParse(value.trim());
+              if (distance == null) {
+                return 'Please enter a valid number';
+              }
+              if (distance <= 0) {
+                return 'Distance must be greater than 0';
+              }
+              if (distance > 200) {
+                return 'Distance seems too large (max 200km)';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Description (Optional)',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _descriptionController,
+            maxLines: 3,
+            style: TextStyle(
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+            decoration: InputDecoration(
+              hintText: 'Describe your route...',
+              hintStyle: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.all(16),
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                if (_routeNameController.text.trim().isNotEmpty &&
+                    _emailController.text.trim().isNotEmpty &&
+                    routeType != null &&
+                    _distanceController.text.trim().isNotEmpty) {
+                  if (_formKey.currentState?.validate() ?? false) {
+                    setState(() => step = 2);
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Please fill in all required fields'),
+                      backgroundColor: Colors.orange[700],
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.neonGreen,
+                foregroundColor: AppColors.textDark,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 8,
+              ),
+              child: const Text(
+                'Continue',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(height: 100),
-      ],
+          const SizedBox(height: 100),
+        ],
+      ),
     );
   }
 

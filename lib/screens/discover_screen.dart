@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
+import '../config/routes.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
@@ -306,7 +307,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   // Compact card for grid view
   Widget _buildGridCard(RouteModel route) {
     return GestureDetector(
-      onTap: () => widget.onRouteSelect(route),
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.routeDetail,
+          arguments: RouteDetailArguments(
+            route: route,
+            isDarkMode: widget.isDarkMode,
+          ),
+        );
+      },
       child: Container(
         decoration: BoxDecoration(
           color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
@@ -424,7 +434,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   Widget _buildRouteCard(RouteModel route) {
     return GestureDetector(
-      onTap: () => widget.onRouteSelect(route),
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.routeDetail,
+          arguments: RouteDetailArguments(
+            route: route,
+            isDarkMode: widget.isDarkMode,
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
