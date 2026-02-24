@@ -203,25 +203,28 @@ StreamBuilder<QuerySnapshot>(
 )
 ```
 
-### 3. Interface Screenshots
-*(Placeholders below. Update paths to actual files)*
-- `![Login UI](docs/assets/login_screen.png)`
-- `![Dashboard with Firestore Data](docs/assets/dashboard_screen.png)`
-- `![Firebase Console Sync](docs/assets/firebase_console.png)`
-
 ### 4. Reflection
 **Challenges:** Ensuring the Flutter lifecycle was correctly initialized via `WidgetsFlutterBinding` before communicating with native Firebase channels. Handing async exceptions efficiently without polluting the UI layer required strict try/catch blocks in the service layer, keeping in mind to prevent using `BuildContext` across async gaps.
 **Benefits of Firebase:** Eliminates the need for a custom REST API and WebSocket server. The `StreamBuilder` architecture natively observes Firestore's internal cache, providing instant UI updates and seamless offline support inherently.
 
+--
+
+## 📱 Responsive Layout Design (Assignment 3.17)
+
+This screen demonstrates a responsive Flutter layout using Container, Row, Column, Expanded, and MediaQuery.
+
 ---
 
-## Video Demo Guidelines (1-2 Min)
-1. **0:00 - 0:15 (Intro & Setup)** 
-   - Open emulator alongside browser with Firebase Console (Auth/Firestore).
-2. **0:15 - 0:40 (Authentication)** 
-   - Sign up a new user on emulator, instantly refresh Firebase Auth console to verify.
-3. **0:40 - 1:15 (Firestore Real-time Sync)**
-   - Add a Route in emulator. Show realtime update in Firebase Firestore console document store.
-   - Edit the document directly in the Firebase Console and point out the emulator updating instantly (without app interaction).
-4. **1:15 - 1:30 (Logout)**
-   - Click logout; app instantly streams state change and returns to Login.
+### 🔧 Layout Strategy
+
+- Used **Column** for vertical structure
+- Used **Row** for horizontal layout on large screens
+- Used **Container** for styled sections
+- Used **Expanded** for flexible sizing
+- Used **MediaQuery** to switch layout based on screen width
+
+---
+
+## 🧠 Reflection
+
+Responsive design ensures the app looks good on different screen sizes and orientations. The main challenge was maintaining balanced proportions across devices. Using MediaQuery and Expanded helped create a flexible layout that adapts smoothly between phone and tablet views.
