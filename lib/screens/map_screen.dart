@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
+import '../config/routes.dart';
 
 class MapScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
@@ -20,9 +21,192 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   String mode = 'runner';
   int selectedRouteId = 1;
+  
+  // Filter state
+  Set<String> selectedSafetyLevels = {'High', 'Medium', 'Low'};
+  String selectedDistanceRange = 'All';
 
   RouteModel? get selectedRoute =>
       MockData.routes.firstWhere((r) => r.id == selectedRouteId);
+  
+  void _showFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          decoration: BoxDecoration(
+            color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Filter Routes',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(
+                      Icons.close,
+                      color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Safety Level Filter
+              Text(
+                'Safety Level',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                children: ['High', 'Medium', 'Low'].map((level) {
+                  final isSelected = selectedSafetyLevels.contains(level);
+                  return FilterChip(
+                    label: Text(level),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setModalState(() {
+                        if (selected) {
+                          selectedSafetyLevels.add(level);
+                        } else {
+                          selectedSafetyLevels.remove(level);
+                        }
+                      });
+                      setState(() {});
+                    },
+                    backgroundColor: widget.isDarkMode ? AppColors.lightBlue : Colors.grey[100],
+                    selectedColor: AppColors.neonGreen.withOpacity(0.3),
+                    checkmarkColor: AppColors.textDark,
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? AppColors.textDark
+                          : widget.isDarkMode
+                              ? Colors.grey[300]
+                              : Colors.grey[700],
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected
+                          ? BorderSide(color: AppColors.neonGreen, width: 2)
+                          : BorderSide.none,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 24),
+              
+              // Distance Range Filter
+              Text(
+                'Distance Range',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: ['All', '0-5 km', '5-10 km', '10+ km'].map((range) {
+                  final isSelected = selectedDistanceRange == range;
+                  return ChoiceChip(
+                    label: Text(range),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        setModalState(() => selectedDistanceRange = range);
+                        setState(() {});
+                      }
+                    },
+                    backgroundColor: widget.isDarkMode ? AppColors.lightBlue : Colors.grey[100],
+                    selectedColor: AppColors.neonGreen.withOpacity(0.3),
+                    labelStyle: TextStyle(
+                      color: isSelected
+                          ? AppColors.textDark
+                          : widget.isDarkMode
+                              ? Colors.grey[300]
+                              : Colors.grey[700],
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: isSelected
+                          ? BorderSide(color: AppColors.neonGreen, width: 2)
+                          : BorderSide.none,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 32),
+              
+              // Apply Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Filters applied: ${selectedSafetyLevels.length} safety levels, $selectedDistanceRange',
+                        ),
+                        backgroundColor: widget.isDarkMode ? AppColors.mediumBlue : AppColors.primaryBlue,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.neonGreen,
+                    foregroundColor: AppColors.textDark,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: const Text(
+                    'Apply Filters',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,48 +256,51 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          Center(
-                            child: Icon(
-                              Icons.filter_list,
-                              color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[700],
-                              size: 20,
+                    GestureDetector(
+                      onTap: _showFilterSheet,
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              width: 12,
-                              height: 12,
-                              decoration: BoxDecoration(
-                                color: AppColors.neonGreen,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppColors.neonGreen.withOpacity(0.6),
-                                    blurRadius: 8,
-                                  ),
-                                ],
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Center(
+                              child: Icon(
+                                Icons.filter_list,
+                                color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                                size: 20,
                               ),
                             ),
-                          ),
-                        ],
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: AppColors.neonGreen,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.neonGreen.withOpacity(0.6),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -174,7 +361,16 @@ class _MapScreenState extends State<MapScreen> {
                     top: 100.0 + (index * 150.0),
                     left: 80.0 + (index * 60.0),
                     child: GestureDetector(
-                      onTap: () => setState(() => selectedRouteId = route.id),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.routeDetail,
+                          arguments: RouteDetailArguments(
+                            route: route,
+                            isDarkMode: widget.isDarkMode,
+                          ),
+                        );
+                      },
                       child: Column(
                         children: [
                           Text(
@@ -414,7 +610,16 @@ class _MapScreenState extends State<MapScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => widget.onRouteSelect(route),
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.routeDetail,
+                  arguments: RouteDetailArguments(
+                    route: route,
+                    isDarkMode: widget.isDarkMode,
+                  ),
+                );
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.neonGreen,
                 foregroundColor: AppColors.textDark,
