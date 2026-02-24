@@ -15,6 +15,7 @@ import 'screens/route_detail_screen.dart';
 
 import 'models/route_model.dart';
 import 'constants/app_colors.dart';
+import 'config/routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,8 @@ class SafeStrideApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.neonGreen),
         useMaterial3: true,
       ),
+      initialRoute: AppRoutes.home,
+      onGenerateRoute: RouteGenerator.generateRoute,
       home: AuthWrapper(
         authStream: authStream,
         child: const MainScreen(),
@@ -65,14 +68,16 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _activeTab = 0;
   bool _isDarkMode = false;
-  RouteModel? _selectedRoute;
 
   void _handleRouteSelect(RouteModel route) {
-    setState(() => _selectedRoute = route);
-  }
-
-  void _handleBackToMap() {
-    setState(() => _selectedRoute = null);
+    Navigator.pushNamed(
+      context,
+      AppRoutes.routeDetail,
+      arguments: RouteDetailArguments(
+        route: route,
+        isDarkMode: _isDarkMode,
+      ),
+    );
   }
 
   void _toggleDarkMode() {
@@ -80,14 +85,6 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Widget _renderScreen() {
-    if (_selectedRoute != null) {
-      return RouteDetailScreen(
-        route: _selectedRoute!,
-        onBack: _handleBackToMap,
-        isDarkMode: _isDarkMode,
-      );
-    }
-
     switch (_activeTab) {
       case 0:
         return MapScreen(
@@ -138,7 +135,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Stack(
           children: [
             _renderScreen(),
-            if (_selectedRoute == null) _buildBottomNav(),
+            _buildBottomNav(),
           ],
         ),
       ),
