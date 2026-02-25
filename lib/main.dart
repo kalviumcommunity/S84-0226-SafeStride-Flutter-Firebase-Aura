@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
-import 'screens/auth_wrapper.dart';
+import 'screens/landing_page.dart';
 import 'screens/main_screen.dart';
 import 'constants/app_colors.dart';
 import 'config/routes.dart';
@@ -32,16 +32,33 @@ class SafeStrideApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SafeStride',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.neonGreen),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primaryGreen),
         useMaterial3: true,
+        fontFamily: 'Poppins',
       ),
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.landing,
       onGenerateRoute: RouteGenerator.generateRoute,
-      home: AuthWrapper(
-        authStream: authStream,
+      home: StreamBuilder<User?>(
+        stream: authStream,
+        builder: (context, snapshot) {
+          // Still loading
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(),
+              ),
+            );
+          }
+          
+          // User is logged in
+          if (snapshot.hasData) {
+            return const MainScreen();
+          }
+          
+          // User is not logged in - show landing page
+          return const LandingPage();
+        },
       ),
     );
   }
 }
-
-// MainScreen is defined in screens/main_screen.dart

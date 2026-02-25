@@ -5,7 +5,6 @@ import '../screens/discover_screen.dart';
 import '../screens/add_route_screen.dart';
 import '../screens/alerts_screen.dart';
 import '../screens/profile_screen.dart';
-import '../screens/route_detail_screen.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../config/routes.dart';

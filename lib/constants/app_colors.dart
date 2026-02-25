@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors
+  // Primary Colors - Landing Page Theme
+  static const Color primaryGreen = Color(0xFF6EEB5F); // Primary Green
+  static const Color hoverGreen = Color(0xFF5EDC4A);   // Hover Green
   static const Color neonGreen = Color(0xFF7DF258);
   static const Color darkGreen = Color(0xFF4ADE80);
+  
+  // Background Colors - Soft bluish-grey
+  static const Color bgLight = Color(0xFFF5F7FA);      // Light bg
+  static const Color bgDark = Color(0xFFE8EEF5);       // Dark bg (gradient end)
+  static const Color cardBg = Color(0xFFF8FAFB);       // Card background
+  
+  // Blue tones
   static const Color darkBlue = Color(0xFF0A1628);
   static const Color mediumBlue = Color(0xFF1A2A42);
   static const Color lightBlue = Color(0xFF0F1F3A);
@@ -30,6 +39,19 @@ class AppColors {
     if (safety >= 70) return safetyMedium;
     return safetyLow;
   }
+  
+  // Landing Page Gradients
+  static LinearGradient get landingBgGradient => const LinearGradient(
+    colors: [bgLight, bgDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
+  static LinearGradient get primaryGreenGradient => const LinearGradient(
+    colors: [primaryGreen, hoverGreen],
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+  );
   
   static LinearGradient get neonGradient => const LinearGradient(
     colors: [neonGreen, darkGreen],
