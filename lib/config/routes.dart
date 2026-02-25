@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../screens/route_detail_screen.dart';
 import '../models/route_model.dart';
-import '../main.dart';
+import '../screens/main_screen.dart';
 
 /// Route names as constants for type safety and maintainability
 class AppRoutes {
