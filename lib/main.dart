@@ -48,7 +48,6 @@ class SafeStrideApp extends StatelessWidget {
       onGenerateRoute: RouteGenerator.generateRoute,
       home: AuthWrapper(
         authStream: authStream,
-        child: const MainScreen(),
       ),
     );
   }
