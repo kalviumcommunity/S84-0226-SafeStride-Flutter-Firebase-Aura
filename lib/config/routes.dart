@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../screens/route_detail_screen.dart';
 import '../models/route_model.dart';
 import '../screens/main_screen.dart';
+import '../screens/landing_page.dart';
+import '../screens/login/login_screen.dart';
+import '../screens/signup_screen.dart';
 
 /// Route names as constants for type safety and maintainability
 class AppRoutes {
@@ -9,7 +12,10 @@ class AppRoutes {
   AppRoutes._();
 
   // Route constants
+  static const String landing = '/landing';
   static const String home = '/';
+  static const String login = '/login';
+  static const String signup = '/signup';
   static const String map = '/map';
   static const String discover = '/discover';
   static const String addRoute = '/add-route';
@@ -51,6 +57,24 @@ class RouteGenerator {
   /// Generates routes based on RouteSettings
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.landing:
+        return MaterialPageRoute(
+          builder: (_) => const LandingPage(),
+          settings: settings,
+        );
+
+      case AppRoutes.login:
+        return MaterialPageRoute(
+          builder: (_) => const LoginScreen(),
+          settings: settings,
+        );
+
+      case AppRoutes.signup:
+        return MaterialPageRoute(
+          builder: (_) => const SignupScreen(),
+          settings: settings,
+        );
+
       case AppRoutes.home:
         return MaterialPageRoute(
           builder: (_) => const MainScreen(),
