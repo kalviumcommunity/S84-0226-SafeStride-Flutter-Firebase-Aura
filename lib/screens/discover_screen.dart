@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
+import '../config/routes.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
@@ -20,6 +21,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   String selectedCategory = 'trending';
   String searchQuery = '';
+  bool isGridView = false; // Toggle between List and Grid view
 
   final List<Map<String, dynamic>> categories = [
     {'id': 'trending', 'name': 'Trending', 'icon': Icons.trending_up},
@@ -27,6 +29,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     {'id': 'top', 'name': 'Top Rated', 'icon': Icons.emoji_events},
     {'id': 'nearby', 'name': 'Nearby', 'icon': Icons.near_me},
   ];
+
+  List<RouteModel> get filteredRoutes {
+    return MockData.featuredRoutes
+        .where((route) => route.name.toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,13 +59,41 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Discover',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Discover',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                      ),
+                    ),
+                    // View Toggle Button
+                    GestureDetector(
+                      onTap: () => setState(() => isGridView = !isGridView),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isGridView ? Icons.list : Icons.grid_view,
+                          color: widget.isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -184,31 +220,230 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           const SizedBox(height: 24),
           // Featured Routes
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              children: [
-                Text(
-                  'Featured Routes',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...MockData.featuredRoutes.map((route) => _buildRouteCard(route)).toList(),
-                const SizedBox(height: 100),
-              ],
-            ),
+            child: isGridView ? _buildGridView() : _buildListView(),
           ),
         ],
       ),
     );
   }
 
+  // ListView.builder implementation
+  Widget _buildListView() {
+    final routes = filteredRoutes;
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      itemCount: routes.length + 2, // +2 for header and bottom spacing
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Text(
+              'Featured Routes',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              ),
+            ),
+          );
+        }
+        
+        if (index == routes.length + 1) {
+          return const SizedBox(height: 100);
+        }
+        
+        final route = routes[index - 1];
+        return _buildRouteCard(route);
+      },
+    );
+  }
+
+  // GridView.builder implementation
+  Widget _buildGridView() {
+    final routes = filteredRoutes;
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          sliver: SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Text(
+                'Featured Routes',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                ),
+              ),
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.75,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final route = routes[index];
+                return _buildGridCard(route);
+              },
+              childCount: routes.length,
+            ),
+          ),
+        ),
+        const SliverToBoxAdapter(
+          child: SizedBox(height: 100),
+        ),
+      ],
+    );
+  }
+
+  // Compact card for grid view
+  Widget _buildGridCard(RouteModel route) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.routeDetail,
+          arguments: RouteDetailArguments(
+            route: route,
+            isDarkMode: widget.isDarkMode,
+          ),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(widget.isDarkMode ? 0.3 : 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Section
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      gradient: LinearGradient(
+                        colors: [AppColors.primaryBlue, AppColors.skyBlue],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        route.emoji,
+                        style: const TextStyle(fontSize: 40),
+                      ),
+                    ),
+                  ),
+                  // Safety Badge
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.getSafetyColor(route.safety).withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${route.safety}%',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Info Section
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      route.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          route.distance,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.star, color: AppColors.neonGreen, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              route.rating.toString(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRouteCard(RouteModel route) {
     return GestureDetector(
-      onTap: () => widget.onRouteSelect(route),
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRoutes.routeDetail,
+          arguments: RouteDetailArguments(
+            route: route,
+            isDarkMode: widget.isDarkMode,
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(

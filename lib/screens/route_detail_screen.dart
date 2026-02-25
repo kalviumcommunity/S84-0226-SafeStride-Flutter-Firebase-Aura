@@ -2,23 +2,32 @@ import 'package:flutter/material.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
+import '../config/routes.dart';
 
 class RouteDetailScreen extends StatelessWidget {
-  final RouteModel route;
-  final VoidCallback onBack;
-  final bool isDarkMode;
+  final RouteModel? route;
+  final VoidCallback? onBack;
+  final bool? isDarkMode;
 
   const RouteDetailScreen({
-    Key? key,
-    required this.route,
-    required this.onBack,
-    required this.isDarkMode,
-  }) : super(key: key);
+    super.key,
+    this.route,
+    this.onBack,
+    this.isDarkMode,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Retrieve arguments from route if not passed directly
+    final args = route == null
+        ? ModalRoute.of(context)!.settings.arguments as RouteDetailArguments?
+        : null;
+
+    final routeData = route ?? args!.route;
+    final darkMode = isDarkMode ?? args?.isDarkMode ?? false;
+
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBlue : AppColors.lightGray,
+      backgroundColor: darkMode ? AppColors.darkBlue : AppColors.lightGray,
       body: Stack(
         children: [
           CustomScrollView(
@@ -35,7 +44,7 @@ class RouteDetailScreen extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          route.emoji,
+                          routeData.emoji,
                           style: const TextStyle(fontSize: 120),
                         ),
                       ),
@@ -64,7 +73,13 @@ class RouteDetailScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           GestureDetector(
-                            onTap: onBack,
+                            onTap: () {
+                              if (onBack != null) {
+                                onBack!();
+                              } else {
+                                Navigator.pop(context);
+                              }
+                            },
                             child: Container(
                               width: 40,
                               height: 40,
@@ -121,11 +136,11 @@ class RouteDetailScreen extends StatelessWidget {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: AppColors.getSafetyColor(route.safety).withOpacity(0.3),
+                          color: AppColors.getSafetyColor(routeData.safety).withOpacity(0.3),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.getSafetyColor(route.safety).withOpacity(0.4),
+                              color: AppColors.getSafetyColor(routeData.safety).withOpacity(0.4),
                               blurRadius: 24,
                               offset: const Offset(0, 8),
                             ),
@@ -136,12 +151,12 @@ class RouteDetailScreen extends StatelessWidget {
                           children: [
                             Icon(
                               Icons.shield,
-                              color: AppColors.getSafetyColor(route.safety),
+                              color: AppColors.getSafetyColor(routeData.safety),
                               size: 32,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${route.safety}%',
+                              '${routeData.safety}%',
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
@@ -168,7 +183,7 @@ class RouteDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            route.name,
+                            routeData.name,
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -187,7 +202,7 @@ class RouteDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  route.category,
+                                  routeData.category,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -202,7 +217,7 @@ class RouteDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  route.distance,
+                                  routeData.distance,
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -220,7 +235,7 @@ class RouteDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    route.rating.toString(),
+                                    routeData.rating.toString(),
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
@@ -229,7 +244,7 @@ class RouteDetailScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '(${route.reviews})',
+                                    '(${routeData.reviews})',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       color: Colors.white70,
@@ -255,18 +270,18 @@ class RouteDetailScreen extends StatelessWidget {
                       offset: const Offset(0, -32),
                       child: Row(
                         children: [
-                          Expanded(child: _buildStatCard(Icons.map, route.distance, 'Distance')),
+                          Expanded(child: _buildStatCard(Icons.map, routeData.distance, 'Distance', darkMode)),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildStatCard(Icons.light_mode, route.lighting, 'Lighting')),
+                          Expanded(child: _buildStatCard(Icons.light_mode, routeData.lighting, 'Lighting', darkMode)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _buildStatCard(Icons.trending_up, route.traffic, 'Traffic')),
+                        Expanded(child: _buildStatCard(Icons.trending_up, routeData.traffic, 'Traffic', darkMode)),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildStatCard(Icons.people, route.crowd, 'Crowd Level')),
+                        Expanded(child: _buildStatCard(Icons.people, routeData.crowd, 'Crowd Level', darkMode)),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -276,11 +291,11 @@ class RouteDetailScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : AppColors.textDark,
+                        color: darkMode ? Colors.white : AppColors.textDark,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...MockData.reviews.map((review) => _buildReviewCard(review)).toList(),
+                    ...MockData.reviews.map((review) => _buildReviewCard(review, darkMode)).toList(),
                     const SizedBox(height: 120),
                   ]),
                 ),
@@ -296,7 +311,7 @@ class RouteDetailScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: isDarkMode
+                  colors: darkMode
                       ? [
                           AppColors.darkBlue.withOpacity(0),
                           AppColors.darkBlue,
@@ -336,15 +351,15 @@ class RouteDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(IconData icon, String value, String label) {
+  Widget _buildStatCard(IconData icon, String value, String label, bool darkMode) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: darkMode ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.08),
+            color: Colors.black.withOpacity(darkMode ? 0.3 : 0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
@@ -355,7 +370,7 @@ class RouteDetailScreen extends StatelessWidget {
         children: [
           Icon(
             icon,
-            color: isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+            color: darkMode ? AppColors.neonGreen : AppColors.primaryBlue,
             size: 24,
           ),
           const SizedBox(height: 12),
@@ -364,7 +379,7 @@ class RouteDetailScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textDark,
+              color: darkMode ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 4),
@@ -372,7 +387,7 @@ class RouteDetailScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              color: darkMode ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ],
@@ -380,16 +395,16 @@ class RouteDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildReviewCard(Review review) {
+  Widget _buildReviewCard(Review review, bool darkMode) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: darkMode ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.06),
+            color: Colors.black.withOpacity(darkMode ? 0.2 : 0.06),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -425,14 +440,14 @@ class RouteDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: isDarkMode ? Colors.white : AppColors.textDark,
+                            color: darkMode ? Colors.white : AppColors.textDark,
                           ),
                         ),
                         Text(
                           review.date,
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                            color: darkMode ? Colors.grey[400] : Colors.grey[500],
                           ),
                         ),
                       ],
@@ -446,7 +461,7 @@ class RouteDetailScreen extends StatelessWidget {
                           size: 16,
                           color: index < review.rating
                               ? AppColors.neonGreen
-                              : isDarkMode
+                              : darkMode
                                   ? Colors.grey[600]
                                   : Colors.grey[300],
                         ),
@@ -462,7 +477,7 @@ class RouteDetailScreen extends StatelessWidget {
             review.text,
             style: TextStyle(
               fontSize: 14,
-              color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+              color: darkMode ? Colors.grey[300] : Colors.grey[700],
               height: 1.5,
             ),
           ),
@@ -472,14 +487,14 @@ class RouteDetailScreen extends StatelessWidget {
               Icon(
                 Icons.thumb_up_outlined,
                 size: 16,
-                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                color: darkMode ? Colors.grey[400] : Colors.grey[600],
               ),
               const SizedBox(width: 8),
               Text(
                 'Helpful (${review.helpful})',
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  color: darkMode ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],

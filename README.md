@@ -140,4 +140,3 @@ It improves readability, enables code reuse, and makes the app easier to scale a
 A consistent structure and naming convention keeps the codebase clean, scalable, and team-friendly for future development.
 
 ---
-
