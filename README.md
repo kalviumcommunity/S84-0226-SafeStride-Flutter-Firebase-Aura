@@ -140,3 +140,15 @@ It improves readability, enables code reuse, and makes the app easier to scale a
 A consistent structure and naming convention keeps the codebase clean, scalable, and team-friendly for future development.
 
 ---
+
+## 📚 Documentation
+
+For additional documentation, see the [docs](./docs) folder:
+
+- [Flutter Fundamentals README](./docs/flutter_fundamentals_README.md) - Flutter widget tree and reactive UI concepts
+- [Project Structure](./docs/PROJECT_STRUCTURE.md) - Project structure overview
+- [Navigation Implementation](./docs/NAVIGATION_IMPLEMENTATION.md) - Navigation setup guide
+- [Landing Page Setup](./docs/LANDING_PAGE_SETUP.md) - Landing page configuration
+- [Quick Reference](./docs/QUICK_REFERENCE.md) - Quick reference guide
+
+---
