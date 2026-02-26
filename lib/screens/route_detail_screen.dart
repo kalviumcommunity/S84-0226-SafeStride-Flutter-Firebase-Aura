@@ -3,6 +3,7 @@ import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
 import '../config/routes.dart';
+import 'route_safety_screen.dart';
 
 class RouteDetailScreen extends StatelessWidget {
   final RouteModel? route;
@@ -283,6 +284,37 @@ class RouteDetailScreen extends StatelessWidget {
                         const SizedBox(width: 16),
                         Expanded(child: _buildStatCard(Icons.people, routeData.crowd, 'Crowd Level', darkMode)),
                       ],
+                    ),
+                    const SizedBox(height: 32),
+                    // Rate Route Button (Navigates to Safety Rating Screen)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => RouteSafetyRatingScreen(
+                              route: routeData,
+                              isDarkMode: darkMode,
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.rate_review),
+                      label: const Text(
+                        'Rate This Route',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     // Reviews Section
