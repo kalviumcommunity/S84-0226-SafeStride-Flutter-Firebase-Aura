@@ -7,6 +7,7 @@ class OtpScreen extends StatefulWidget {
   final String email;
   final String password;
   final String name;
+
   /// The code returned by generateAndStoreOtp – shown to the user for demo
   /// purposes. In production this would arrive via email.
   final String demoCode;
@@ -25,10 +26,11 @@ class OtpScreen extends StatefulWidget {
 
 class _OtpScreenState extends State<OtpScreen>
     with SingleTickerProviderStateMixin {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
-  final List<FocusNode> _focusNodes =
-      List.generate(6, (_) => FocusNode());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
+  final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
 
   bool _isVerifying = false;
   bool _isResending = false;
@@ -47,13 +49,14 @@ class _OtpScreenState extends State<OtpScreen>
     _startTimer();
 
     _animController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 600));
-    _fadeAnim =
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-            begin: const Offset(0, 0.06), end: Offset.zero)
-        .animate(
-            CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -78,8 +81,7 @@ class _OtpScreenState extends State<OtpScreen>
     super.dispose();
   }
 
-  String get _enteredCode =>
-      _controllers.map((c) => c.text).join();
+  String get _enteredCode => _controllers.map((c) => c.text).join();
 
   String get _timerLabel {
     final m = _secondsLeft ~/ 60;
@@ -108,17 +110,18 @@ class _OtpScreenState extends State<OtpScreen>
         displayName: widget.name,
       );
 
-      // 3. AuthWrapper will detect the new signed-in user and show MainScreen.
-      //    We clear the entire navigation stack to surface AuthWrapper's root.
+      // 3. Pop all screens back to AuthWrapper (the root home).
+      //    AuthWrapper re-renders and shows MainScreen because the user is now
+      //    signed in — avoids the stuck loading spinner on web.
       if (mounted) {
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/', (route) => false);
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
         _showSnack(
-            e is AuthFailure ? e.message : 'Verification failed. Try again.',
-            isError: true);
+          e is AuthFailure ? e.message : 'Verification failed. Try again.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isVerifying = false);
@@ -129,8 +132,10 @@ class _OtpScreenState extends State<OtpScreen>
   Future<void> _resend() async {
     setState(() => _isResending = true);
     try {
-      final newCode = await AuthService()
-          .generateAndStoreOtp(widget.email, widget.name);
+      final newCode = await AuthService().generateAndStoreOtp(
+        widget.email,
+        widget.name,
+      );
       setState(() => _liveCode = newCode);
       _startTimer();
       for (final c in _controllers) c.clear();
@@ -144,17 +149,24 @@ class _OtpScreenState extends State<OtpScreen>
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          msg,
           style: const TextStyle(
-              fontWeight: FontWeight.w500, color: Colors.white)),
-      backgroundColor:
-          isError ? const Color(0xFFFF5252) : const Color(0xFF6EEB5F),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 4),
-    ));
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: isError
+            ? const Color(0xFFFF5252)
+            : const Color(0xFF6EEB5F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
@@ -167,8 +179,7 @@ class _OtpScreenState extends State<OtpScreen>
           child: SlideTransition(
             position: _slideAnim,
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -207,13 +218,17 @@ class _OtpScreenState extends State<OtpScreen>
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3)),
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
             ],
           ),
-          child: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18, color: Color(0xFF1A2035)),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 18,
+            color: Color(0xFF1A2035),
+          ),
         ),
       ),
     );
@@ -229,14 +244,18 @@ class _OtpScreenState extends State<OtpScreen>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF6EEB5F).withOpacity(0.50),
-              blurRadius: 28,
-              spreadRadius: 2,
-              offset: const Offset(0, 8)),
+            color: const Color(0xFF6EEB5F).withOpacity(0.50),
+            blurRadius: 28,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
-      child: const Icon(Icons.mark_email_read_outlined,
-          color: Colors.white, size: 44),
+      child: const Icon(
+        Icons.mark_email_read_outlined,
+        color: Colors.white,
+        size: 44,
+      ),
     );
   }
 
@@ -248,25 +267,28 @@ class _OtpScreenState extends State<OtpScreen>
         const Text(
           'Verify Your Email',
           style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1A2035),
-              letterSpacing: -0.3),
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF1A2035),
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 10),
         Text.rich(
           TextSpan(
             text: 'We sent a 6-digit code to\n',
             style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF8494A9),
-                height: 1.6),
+              fontSize: 14,
+              color: Color(0xFF8494A9),
+              height: 1.6,
+            ),
             children: [
               TextSpan(
                 text: maskedEmail,
                 style: const TextStyle(
-                    color: Color(0xFF1A2035),
-                    fontWeight: FontWeight.w700),
+                  color: Color(0xFF1A2035),
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -294,13 +316,15 @@ class _OtpScreenState extends State<OtpScreen>
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF6EEB5F).withOpacity(0.08),
-              blurRadius: 32,
-              offset: const Offset(0, 10)),
+            color: const Color(0xFF6EEB5F).withOpacity(0.08),
+            blurRadius: 32,
+            offset: const Offset(0, 10),
+          ),
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -362,9 +386,10 @@ class _OtpScreenState extends State<OtpScreen>
               boxShadow: isFocused
                   ? [
                       BoxShadow(
-                          color: const Color(0xFF6EEB5F).withOpacity(0.25),
-                          blurRadius: 10,
-                          spreadRadius: 1)
+                        color: const Color(0xFF6EEB5F).withOpacity(0.25),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      ),
                     ]
                   : [],
             ),
@@ -376,9 +401,10 @@ class _OtpScreenState extends State<OtpScreen>
               maxLength: 1,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A2035)),
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1A2035),
+              ),
               decoration: const InputDecoration(
                 counterText: '',
                 border: InputBorder.none,
@@ -411,35 +437,43 @@ class _OtpScreenState extends State<OtpScreen>
         color: const Color(0xFF6EEB5F).withOpacity(0.10),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: const Color(0xFF6EEB5F).withOpacity(0.30), width: 1),
+          color: const Color(0xFF6EEB5F).withOpacity(0.30),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded,
-              color: Color(0xFF6EEB5F), size: 18),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: Color(0xFF6EEB5F),
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text.rich(
               TextSpan(
                 text: 'Demo code: ',
                 style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF4A8A3E),
-                    fontWeight: FontWeight.w500),
+                  fontSize: 13,
+                  color: Color(0xFF4A8A3E),
+                  fontWeight: FontWeight.w500,
+                ),
                 children: [
                   TextSpan(
                     text: _liveCode,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 15,
-                        letterSpacing: 2),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      letterSpacing: 2,
+                    ),
                   ),
                   const TextSpan(
                     text: '\nIn production this is emailed to you.',
                     style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w400,
-                        color: Color(0xFF8494A9)),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF8494A9),
+                    ),
                   ),
                 ],
               ),
@@ -463,9 +497,10 @@ class _OtpScreenState extends State<OtpScreen>
               ? []
               : [
                   BoxShadow(
-                      color: const Color(0xFF6EEB5F).withOpacity(0.50),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6))
+                    color: const Color(0xFF6EEB5F).withOpacity(0.50),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
                 ],
         ),
         child: ElevatedButton(
@@ -481,18 +516,26 @@ class _OtpScreenState extends State<OtpScreen>
                 : Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18)),
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
           child: _isVerifying
               ? const SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2.5, color: Colors.white))
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
               : Text(
-                  _timerExpired ? 'Code Expired — Resend' : 'Verify & Create Account',
+                  _timerExpired
+                      ? 'Code Expired — Resend'
+                      : 'Verify & Create Account',
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
         ),
       ),
@@ -504,8 +547,10 @@ class _OtpScreenState extends State<OtpScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Didn't receive the code?  ",
-            style: TextStyle(color: Color(0xFF8494A9), fontSize: 14)),
+        const Text(
+          "Didn't receive the code?  ",
+          style: TextStyle(color: Color(0xFF8494A9), fontSize: 14),
+        ),
         GestureDetector(
           onTap: _isResending ? null : _resend,
           child: _isResending
@@ -513,12 +558,18 @@ class _OtpScreenState extends State<OtpScreen>
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Color(0xFF6EEB5F)))
-              : const Text('Resend Code',
+                    strokeWidth: 2,
+                    color: Color(0xFF6EEB5F),
+                  ),
+                )
+              : const Text(
+                  'Resend Code',
                   style: TextStyle(
-                      color: Color(0xFF6EEB5F),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700)),
+                    color: Color(0xFF6EEB5F),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ],
     );
