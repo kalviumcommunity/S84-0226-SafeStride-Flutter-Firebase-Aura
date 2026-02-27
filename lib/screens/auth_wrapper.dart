@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
-import 'login/login_screen.dart';
+import 'landing_page.dart';
 import 'main_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -14,13 +14,25 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: authStream ?? AuthService().authStateChanges,
       builder: (context, snapshot) {
+        // Show a brief loading indicator only on first connection.
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          // Use currentUser as a fast-path to avoid flicker on warm restarts.
+          if (FirebaseAuth.instance.currentUser != null) {
+            return const MainScreen();
+          }
+          return const Scaffold(
+            backgroundColor: Color(0xFFECF0F8),
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
-        if (snapshot.hasData) {
+
+        // Logged in — also check currentUser as a fallback for web auth delay.
+        if (snapshot.hasData || FirebaseAuth.instance.currentUser != null) {
           return const MainScreen();
         }
-        return const LoginScreen();
+
+        // Not logged in — show the landing / onboarding page.
+        return const LandingPage();
       },
     );
   }
