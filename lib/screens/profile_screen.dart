@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
+import '../services/auth_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   final bool isDarkMode;
@@ -14,8 +16,16 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName = (user?.displayName?.isNotEmpty ?? false)
+        ? user!.displayName!
+        : 'SafeStride User';
+    final email = user?.email ?? '';
+
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
+      backgroundColor: isDarkMode
+          ? AppColors.darkBlue
+          : AppColors.lightBackground,
       body: Column(
         children: [
           // Header with Gradient
@@ -23,7 +33,11 @@ class ProfileScreen extends StatelessWidget {
             height: 260,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [AppColors.primaryBlue, AppColors.skyBlue, AppColors.neonGreen],
+                colors: [
+                  AppColors.primaryBlue,
+                  AppColors.skyBlue,
+                  AppColors.neonGreen,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -99,12 +113,20 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Alex Martinez',
-                  style: TextStyle(
+                Text(
+                  displayName,
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  email,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.white.withOpacity(0.75),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -129,7 +151,9 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(child: _buildStatCard(Icons.star, '18', 'Reviews')),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildStatCard(Icons.favorite, '12', 'Favorites')),
+                  Expanded(
+                    child: _buildStatCard(Icons.favorite, '12', 'Favorites'),
+                  ),
                 ],
               ),
             ),
@@ -138,7 +162,9 @@ class ProfileScreen extends StatelessWidget {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: MockData.routes.length + 4, // +4 for settings section, headers, and spacing
+              itemCount:
+                  MockData.routes.length +
+                  4, // +4 for settings section, headers, and spacing
               itemBuilder: (context, index) {
                 // Settings header
                 if (index == 0) {
@@ -154,7 +180,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 // Settings card
                 if (index == 1) {
                   return Padding(
@@ -173,7 +199,18 @@ class ProfileScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           _buildSettingItem(
-                            icon: isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                            icon: Icons.logout,
+                            title: 'Sign Out',
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () async {
+                              await AuthService().logout();
+                            },
+                          ),
+                          _buildDivider(),
+                          _buildSettingItem(
+                            icon: isDarkMode
+                                ? Icons.dark_mode
+                                : Icons.light_mode,
                             title: isDarkMode ? 'Dark Mode' : 'Light Mode',
                             trailing: Switch(
                               value: isDarkMode,
@@ -199,7 +236,7 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 // Saved Routes header
                 if (index == 2) {
                   return Padding(
@@ -214,12 +251,12 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   );
                 }
-                
+
                 // Bottom spacing
                 if (index == MockData.routes.length + 3) {
                   return const SizedBox(height: 100);
                 }
-                
+
                 // Saved route cards
                 final route = MockData.routes[index - 3];
                 return _buildSavedRouteCard(route);
@@ -290,11 +327,11 @@ class ProfileScreen extends StatelessWidget {
               icon,
               color: isDarkMode
                   ? (title.contains('Dark') || title.contains('Light')
-                      ? AppColors.neonGreen
-                      : Colors.grey[400])
+                        ? AppColors.neonGreen
+                        : Colors.grey[400])
                   : (title.contains('Dark') || title.contains('Light')
-                      ? AppColors.primaryBlue
-                      : Colors.grey[600]),
+                        ? AppColors.primaryBlue
+                        : Colors.grey[600]),
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -348,10 +385,7 @@ class ProfileScreen extends StatelessWidget {
               gradient: AppColors.blueGradient,
             ),
             child: Center(
-              child: Text(
-                route.emoji,
-                style: const TextStyle(fontSize: 28),
-              ),
+              child: Text(route.emoji, style: const TextStyle(fontSize: 28)),
             ),
           ),
           const SizedBox(width: 16),
@@ -386,16 +420,23 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
-                        color: isDarkMode ? AppColors.lightBlue : Colors.grey[100],
+                        color: isDarkMode
+                            ? AppColors.lightBlue
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         route.category,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                          color: isDarkMode
+                              ? Colors.grey[300]
+                              : Colors.grey[600],
                         ),
                       ),
                     ),

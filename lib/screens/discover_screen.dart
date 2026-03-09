@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
 import '../config/routes.dart';
+import '../services/firestore_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
@@ -32,7 +34,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   List<RouteModel> get filteredRoutes {
     return MockData.featuredRoutes
-        .where((route) => route.name.toLowerCase().contains(searchQuery.toLowerCase()))
+        .where(
+          (route) =>
+              route.name.toLowerCase().contains(searchQuery.toLowerCase()),
+        )
         .toList();
   }
 
@@ -55,7 +60,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 end: Alignment.bottomCenter,
               ),
             ),
-            padding: const EdgeInsets.only(left: 24, right: 24, top: 64, bottom: 24),
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 64,
+              bottom: 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -67,7 +77,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                        color: widget.isDarkMode
+                            ? Colors.white
+                            : AppColors.textDark,
                       ),
                     ),
                     // View Toggle Button
@@ -77,7 +89,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+                          color: widget.isDarkMode
+                              ? AppColors.mediumBlue
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
@@ -88,7 +102,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ),
                         child: Icon(
                           isGridView ? Icons.list : Icons.grid_view,
-                          color: widget.isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+                          color: widget.isDarkMode
+                              ? AppColors.neonGreen
+                              : AppColors.primaryBlue,
                           size: 20,
                         ),
                       ),
@@ -100,15 +116,22 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   'Find your perfect route',
                   style: TextStyle(
                     fontSize: 14,
-                    color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    color: widget.isDarkMode
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
                   ),
                 ),
                 const SizedBox(height: 24),
                 // Search Bar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
-                    color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+                    color: widget.isDarkMode
+                        ? AppColors.mediumBlue
+                        : Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -121,20 +144,27 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     children: [
                       Icon(
                         Icons.search,
-                        color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[500],
+                        color: widget.isDarkMode
+                            ? Colors.grey[400]
+                            : Colors.grey[500],
                         size: 20,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
-                          onChanged: (value) => setState(() => searchQuery = value),
+                          onChanged: (value) =>
+                              setState(() => searchQuery = value),
                           style: TextStyle(
-                            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                            color: widget.isDarkMode
+                                ? Colors.white
+                                : AppColors.textDark,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Search routes...',
                             hintStyle: TextStyle(
-                              color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                              color: widget.isDarkMode
+                                  ? Colors.grey[500]
+                                  : Colors.grey[400],
                             ),
                             border: InputBorder.none,
                             isDense: true,
@@ -160,16 +190,20 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: GestureDetector(
-                    onTap: () => setState(() => selectedCategory = category['id']),
+                    onTap: () =>
+                        setState(() => selectedCategory = category['id']),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         gradient: isActive ? AppColors.neonGradient : null,
                         color: isActive
                             ? null
                             : widget.isDarkMode
-                                ? AppColors.mediumBlue
-                                : Colors.white,
+                            ? AppColors.mediumBlue
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: isActive
                             ? [
@@ -193,8 +227,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             color: isActive
                                 ? AppColors.textDark
                                 : widget.isDarkMode
-                                    ? Colors.grey[400]
-                                    : Colors.grey[600],
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                           ),
                           const SizedBox(width: 8),
                           Text(
@@ -205,8 +239,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               color: isActive
                                   ? AppColors.textDark
                                   : widget.isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -219,9 +253,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           ),
           const SizedBox(height: 24),
           // Featured Routes
-          Expanded(
-            child: isGridView ? _buildGridView() : _buildListView(),
-          ),
+          Expanded(child: isGridView ? _buildGridView() : _buildListView()),
         ],
       ),
     );
@@ -232,7 +264,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     final routes = filteredRoutes;
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount: routes.length + 2, // +2 for header and bottom spacing
+      itemCount:
+          routes.length + 3, // +3 for header, community section, bottom spacing
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -247,14 +280,251 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             ),
           );
         }
-        
+
         if (index == routes.length + 1) {
+          return _buildCommunityRoutesSection();
+        }
+
+        if (index == routes.length + 2) {
           return const SizedBox(height: 100);
         }
-        
+
         final route = routes[index - 1];
         return _buildRouteCard(route);
       },
+    );
+  }
+
+  Widget _buildCommunityRoutesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 28),
+        Text(
+          'Community Routes',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Routes submitted by the SafeStride community',
+          style: TextStyle(
+            fontSize: 13,
+            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirestoreService().getRoutesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Could not load community routes.',
+                  style: TextStyle(
+                    color: widget.isDarkMode
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                ),
+              );
+            }
+            final docs = snapshot.data?.docs ?? [];
+            if (docs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode
+                        ? AppColors.mediumBlue
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_road,
+                        color: widget.isDarkMode
+                            ? AppColors.neonGreen
+                            : AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'No community routes yet. Be the first to add one!',
+                          style: TextStyle(
+                            color: widget.isDarkMode
+                                ? Colors.grey[300]
+                                : AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return Column(
+              children: docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return _buildCommunityRouteCard(data);
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCommunityRouteCard(Map<String, dynamic> data) {
+    final name = data['name'] as String? ?? 'Unnamed Route';
+    final category = data['category'] as String? ?? '—';
+    final distance = data['distance'] as String? ?? '—';
+    final description = data['description'] as String? ?? '';
+    final isRunner = category.toLowerCase().contains('runner');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(widget.isDarkMode ? 0.2 : 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color:
+                  (widget.isDarkMode
+                          ? AppColors.neonGreen
+                          : AppColors.primaryBlue)
+                      .withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                isRunner ? '🏃' : '🚴',
+                style: const TextStyle(fontSize: 22),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: widget.isDarkMode
+                        ? Colors.white
+                        : AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.straighten,
+                      size: 13,
+                      color: widget.isDarkMode
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      distance,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: widget.isDarkMode
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Icon(
+                      Icons.directions,
+                      size: 13,
+                      color: widget.isDarkMode
+                          ? Colors.grey[400]
+                          : Colors.grey[600],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      category,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: widget.isDarkMode
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: widget.isDarkMode
+                          ? Colors.grey[500]
+                          : Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.neonGreen.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Community',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: widget.isDarkMode
+                    ? AppColors.neonGreen
+                    : AppColors.primaryBlue,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -288,18 +558,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               mainAxisSpacing: 16,
               childAspectRatio: 0.75,
             ),
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final route = routes[index];
-                return _buildGridCard(route);
-              },
-              childCount: routes.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final route = routes[index];
+              return _buildGridCard(route);
+            }, childCount: routes.length),
           ),
         ),
-        const SliverToBoxAdapter(
-          child: SizedBox(height: 100),
-        ),
+        const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
@@ -339,7 +604,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 children: [
                   Container(
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
                       gradient: LinearGradient(
                         colors: [AppColors.primaryBlue, AppColors.skyBlue],
                         begin: Alignment.topLeft,
@@ -358,9 +625,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     top: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.getSafetyColor(route.safety).withOpacity(0.9),
+                        color: AppColors.getSafetyColor(
+                          route.safety,
+                        ).withOpacity(0.9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -390,7 +662,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                        color: widget.isDarkMode
+                            ? Colors.white
+                            : AppColors.textDark,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -402,20 +676,28 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           route.distance,
                           style: TextStyle(
                             fontSize: 12,
-                            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                            color: widget.isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
                           ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: AppColors.neonGreen, size: 14),
+                            const Icon(
+                              Icons.star,
+                              color: AppColors.neonGreen,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               route.rating.toString(),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                                color: widget.isDarkMode
+                                    ? Colors.white
+                                    : AppColors.textDark,
                               ),
                             ),
                           ],
@@ -466,12 +748,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 Container(
                   height: 192,
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primaryBlue,
-                        AppColors.skyBlue,
-                      ],
+                      colors: [AppColors.primaryBlue, AppColors.skyBlue],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -486,7 +767,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 Container(
                   height: 192,
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
@@ -503,7 +786,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     top: 16,
                     left: 16,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.9),
                         borderRadius: BorderRadius.circular(12),
@@ -526,11 +812,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AppColors.getSafetyColor(route.safety).withOpacity(0.3),
+                      color: AppColors.getSafetyColor(
+                        route.safety,
+                      ).withOpacity(0.3),
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.getSafetyColor(route.safety).withOpacity(0.4),
+                          color: AppColors.getSafetyColor(
+                            route.safety,
+                          ).withOpacity(0.4),
                           blurRadius: 16,
                         ),
                       ],
@@ -568,7 +858,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                      color: widget.isDarkMode
+                          ? Colors.white
+                          : AppColors.textDark,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -581,12 +873,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             route.distance,
                             style: TextStyle(
                               fontSize: 14,
-                              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                              color: widget.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: widget.isDarkMode
                                   ? AppColors.lightBlue
@@ -618,7 +915,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             route.rating.toString(),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                              color: widget.isDarkMode
+                                  ? Colors.white
+                                  : AppColors.textDark,
                             ),
                           ),
                           const SizedBox(width: 4),
@@ -626,7 +925,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             '(${route.reviews})',
                             style: TextStyle(
                               fontSize: 14,
-                              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                              color: widget.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
                             ),
                           ),
                         ],

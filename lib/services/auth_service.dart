@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'firestore_service.dart';
 
 class AuthFailure implements Exception {
   final String message;
-  AuthFailure(this.message);
+  final String? code;
+  AuthFailure(this.message, {this.code});
   @override
   String toString() => message;
 }
@@ -21,15 +23,11 @@ class AuthService {
   /// In production you would email the code; here we return it so the screen
   /// can display it for demo purposes.
   Future<String> generateAndStoreOtp(String email, String name) async {
-    final code =
-        (100000 + Random().nextInt(900000)).toString(); // 100000–999999
-    final expiry =
-        DateTime.now().add(const Duration(minutes: 10));
+    final code = (100000 + Random().nextInt(900000))
+        .toString(); // 100000–999999
+    final expiry = DateTime.now().add(const Duration(minutes: 10));
 
-    await _db
-        .collection('pending_verifications')
-        .doc(_emailKey(email))
-        .set({
+    await _db.collection('pending_verifications').doc(_emailKey(email)).set({
       'code': code,
       'name': name,
       'expiry': Timestamp.fromDate(expiry),
@@ -48,8 +46,7 @@ class AuthService {
         .get();
 
     if (!doc.exists) {
-      throw AuthFailure(
-          'Session expired. Please go back and sign up again.');
+      throw AuthFailure('Session expired. Please go back and sign up again.');
     }
 
     final data = doc.data()!;
@@ -74,8 +71,11 @@ class AuthService {
 
   // ── Auth ──────────────────────────────────────────────────────────────────
 
-  Future<UserCredential> signUp(String email, String password,
-      {String? displayName}) async {
+  Future<UserCredential> signUp(
+    String email,
+    String password, {
+    String? displayName,
+  }) async {
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -84,9 +84,17 @@ class AuthService {
       if (displayName != null && displayName.isNotEmpty) {
         await cred.user?.updateDisplayName(displayName);
       }
+      // Persist user profile to Firestore `users` collection
+      if (cred.user != null) {
+        await FirestoreService().addUserData(cred.user!.uid, {
+          'uid': cred.user!.uid,
+          'email': email,
+          'displayName': displayName ?? '',
+        });
+      }
       return cred;
     } on FirebaseAuthException catch (e) {
-      throw AuthFailure(_mapFirebaseErrorCode(e.code));
+      throw AuthFailure(_mapFirebaseErrorCode(e.code), code: e.code);
     }
   }
 
@@ -97,7 +105,15 @@ class AuthService {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      throw AuthFailure(_mapFirebaseErrorCode(e.code));
+      throw AuthFailure(_mapFirebaseErrorCode(e.code), code: e.code);
+    }
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw AuthFailure(_mapFirebaseErrorCode(e.code), code: e.code);
     }
   }
 
@@ -122,4 +138,3 @@ class AuthService {
     }
   }
 }
-

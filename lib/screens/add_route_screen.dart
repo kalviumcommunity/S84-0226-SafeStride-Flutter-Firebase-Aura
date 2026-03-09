@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants/app_colors.dart';
+import '../services/firestore_service.dart';
 
 class AddRouteScreen extends StatefulWidget {
   final bool isDarkMode;
 
-  const AddRouteScreen({
-    Key? key,
-    required this.isDarkMode,
-  }) : super(key: key);
+  const AddRouteScreen({Key? key, required this.isDarkMode}) : super(key: key);
 
   @override
   State<AddRouteScreen> createState() => _AddRouteScreenState();
@@ -16,10 +15,10 @@ class AddRouteScreen extends StatefulWidget {
 class _AddRouteScreenState extends State<AddRouteScreen> {
   int step = 1;
   String? routeType;
-  
+
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+
   // Text editing controllers
   final _routeNameController = TextEditingController();
   final _distanceController = TextEditingController();
@@ -35,45 +34,25 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     super.dispose();
   }
 
+  bool _isSaving = false;
+
   void handleSubmit() {
     if (_formKey.currentState?.validate() ?? false) {
-      _formKey.currentState?.save();
-      
-      // Show success feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: AppColors.neonGreen),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Route "${_routeNameController.text}" submitted successfully!',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+      if (routeType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please select a route type'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
-          backgroundColor: widget.isDarkMode ? AppColors.mediumBlue : AppColors.primaryBlue,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
-      
-      setState(() => step = 4);
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) {
-          setState(() {
-            step = 1;
-            routeType = null;
-            _routeNameController.clear();
-            _distanceController.clear();
-            _emailController.clear();
-            _descriptionController.clear();
-          });
-        }
-      });
+        );
+        return;
+      }
+      _formKey.currentState?.save();
+      _saveToFirestore();
     } else {
       // Show validation error
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,9 +71,87 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           ),
           backgroundColor: Colors.red[700],
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
+    }
+  }
+
+  Future<void> _saveToFirestore() async {
+    setState(() => _isSaving = true);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+      final routeId = '${uid}_${DateTime.now().millisecondsSinceEpoch}';
+
+      await FirestoreService().addRoute(routeId, {
+        'routeId': routeId,
+        'name': _routeNameController.text.trim(),
+        'category': routeType == 'runner' ? 'Runner' : 'Cyclist',
+        'distance': '${_distanceController.text.trim()} km',
+        'description': _descriptionController.text.trim(),
+        'contactEmail': _emailController.text.trim(),
+        'submittedBy': uid,
+        'safety': 0,
+        'rating': 0.0,
+        'reviews': 0,
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.neonGreen),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Route "${_routeNameController.text}" submitted successfully!',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: widget.isDarkMode
+              ? AppColors.mediumBlue
+              : AppColors.primaryBlue,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      setState(() => step = 4);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) {
+          setState(() {
+            step = 1;
+            routeType = null;
+            _routeNameController.clear();
+            _distanceController.clear();
+            _emailController.clear();
+            _descriptionController.clear();
+          });
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save route: $e'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -102,7 +159,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   Widget build(BuildContext context) {
     if (step == 4) {
       return Scaffold(
-        backgroundColor: widget.isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
+        backgroundColor: widget.isDarkMode
+            ? AppColors.darkBlue
+            : AppColors.lightBackground,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -141,7 +200,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 'Your route has been successfully submitted for review.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  color: widget.isDarkMode
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
                 ),
               ),
             ],
@@ -151,7 +212,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     }
 
     return Scaffold(
-      backgroundColor: widget.isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
+      backgroundColor: widget.isDarkMode
+          ? AppColors.darkBlue
+          : AppColors.lightBackground,
       body: Column(
         children: [
           // Header
@@ -165,7 +228,12 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 end: Alignment.bottomCenter,
               ),
             ),
-            padding: const EdgeInsets.only(left: 24, right: 24, top: 64, bottom: 24),
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 64,
+              bottom: 24,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -174,7 +242,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                    color: widget.isDarkMode
+                        ? Colors.white
+                        : AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -182,7 +252,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   'Share your favorite route with the community',
                   style: TextStyle(
                     fontSize: 14,
-                    color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    color: widget.isDarkMode
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
                   ),
                 ),
               ],
@@ -203,12 +275,14 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                             height: 4,
                             margin: const EdgeInsets.symmetric(horizontal: 8),
                             decoration: BoxDecoration(
-                              gradient: step > i ? AppColors.neonGradient : null,
+                              gradient: step > i
+                                  ? AppColors.neonGradient
+                                  : null,
                               color: step > i
                                   ? null
                                   : widget.isDarkMode
-                                      ? AppColors.mediumBlue
-                                      : Colors.grey[200],
+                                  ? AppColors.mediumBlue
+                                  : Colors.grey[200],
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -250,8 +324,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         color: step >= stepNum
             ? null
             : widget.isDarkMode
-                ? AppColors.mediumBlue
-                : Colors.grey[200],
+            ? AppColors.mediumBlue
+            : Colors.grey[200],
         shape: BoxShape.circle,
         boxShadow: step >= stepNum
             ? [
@@ -271,8 +345,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             color: step >= stepNum
                 ? AppColors.textDark
                 : widget.isDarkMode
-                    ? Colors.grey[500]
-                    : Colors.grey[400],
+                ? Colors.grey[500]
+                : Colors.grey[400],
           ),
         ),
       ),
@@ -286,11 +360,11 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         fontSize: 12,
         color: step >= stepNum
             ? widget.isDarkMode
-                ? AppColors.neonGreen
-                : AppColors.primaryBlue
+                  ? AppColors.neonGreen
+                  : AppColors.primaryBlue
             : widget.isDarkMode
-                ? Colors.grey[500]
-                : Colors.grey[400],
+            ? Colors.grey[500]
+            : Colors.grey[400],
       ),
     );
   }
@@ -334,7 +408,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              fillColor: widget.isDarkMode
+                  ? AppColors.mediumBlue
+                  : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -381,7 +457,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              fillColor: widget.isDarkMode
+                  ? AppColors.mediumBlue
+                  : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -401,9 +479,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 return 'Please enter your email';
               }
               // Email regex pattern
-              final emailRegex = RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              );
+              final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
               if (!emailRegex.hasMatch(value.trim())) {
                 return 'Please enter a valid email address';
               }
@@ -424,7 +500,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             children: [
               Expanded(child: _buildRouteTypeCard('runner', '🏃‍♂️', 'Runner')),
               const SizedBox(width: 16),
-              Expanded(child: _buildRouteTypeCard('cyclist', '🚴‍♀️', 'Cyclist')),
+              Expanded(
+                child: _buildRouteTypeCard('cyclist', '🚴‍♀️', 'Cyclist'),
+              ),
             ],
           ),
           if (routeType == null)
@@ -432,10 +510,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               padding: const EdgeInsets.only(top: 8),
               child: Text(
                 'Please select a route type',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.red[400],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.red[400]),
               ),
             ),
           const SizedBox(height: 24),
@@ -460,7 +535,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              fillColor: widget.isDarkMode
+                  ? AppColors.mediumBlue
+                  : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -514,7 +591,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              fillColor: widget.isDarkMode
+                  ? AppColors.mediumBlue
+                  : Colors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
@@ -540,7 +619,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                       content: const Text('Please fill in all required fields'),
                       backgroundColor: Colors.orange[700],
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   );
                 }
@@ -556,10 +637,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               ),
               child: const Text(
                 'Continue',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -580,8 +658,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           color: isSelected
               ? null
               : widget.isDarkMode
-                  ? AppColors.mediumBlue
-                  : Colors.white,
+              ? AppColors.mediumBlue
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: isSelected
               ? [
@@ -609,8 +687,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 color: isSelected
                     ? AppColors.textDark
                     : widget.isDarkMode
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
+                    ? Colors.grey[400]
+                    : Colors.grey[600],
               ),
             ),
           ],
@@ -628,7 +706,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: widget.isDarkMode ? AppColors.lightBlue : Colors.grey[200]!,
+              color: widget.isDarkMode
+                  ? AppColors.lightBlue
+                  : Colors.grey[200]!,
               width: 2,
               style: BorderStyle.solid,
             ),
@@ -647,7 +727,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 child: Icon(
                   Icons.map,
                   size: 32,
-                  color: widget.isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+                  color: widget.isDarkMode
+                      ? AppColors.neonGreen
+                      : AppColors.primaryBlue,
                 ),
               ),
               const SizedBox(height: 16),
@@ -665,7 +747,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                  color: widget.isDarkMode
+                      ? Colors.grey[300]
+                      : Colors.grey[700],
                 ),
               ),
               const SizedBox(height: 16),
@@ -674,16 +758,17 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.neonGreen,
                   foregroundColor: AppColors.textDark,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
                   'Open Map',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -705,10 +790,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             ),
             child: const Text(
               'Continue',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -733,13 +815,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       children: [
         Row(
           children: [
-            Expanded(
-              child: _buildMediaOption(Icons.camera_alt, 'Take Photo'),
-            ),
+            Expanded(child: _buildMediaOption(Icons.camera_alt, 'Take Photo')),
             const SizedBox(width: 16),
-            Expanded(
-              child: _buildMediaOption(Icons.upload, 'Upload'),
-            ),
+            Expanded(child: _buildMediaOption(Icons.upload, 'Upload')),
           ],
         ),
         const SizedBox(height: 24),
@@ -763,7 +841,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: handleSubmit,
+            onPressed: _isSaving ? null : handleSubmit,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.neonGreen,
               foregroundColor: AppColors.textDark,
@@ -773,13 +851,19 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               ),
               elevation: 8,
             ),
-            child: const Text(
-              'Submit Route',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: _isSaving
+                ? const SizedBox(
+                    height: 22,
+                    width: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Submit Route',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -807,10 +891,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
           ],
         ),
         child: Column(
@@ -827,7 +908,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               child: Icon(
                 icon,
                 size: 32,
-                color: widget.isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+                color: widget.isDarkMode
+                    ? AppColors.neonGreen
+                    : AppColors.primaryBlue,
               ),
             ),
             const SizedBox(height: 12),
