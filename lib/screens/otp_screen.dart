@@ -118,10 +118,33 @@ class _OtpScreenState extends State<OtpScreen>
       }
     } catch (e) {
       if (mounted) {
-        _showSnack(
-          e is AuthFailure ? e.message : 'Verification failed. Try again.',
-          isError: true,
-        );
+        if (e is AuthFailure && e.code == 'email-already-in-use') {
+          // Account already exists — send the user back to login
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'That email is already registered. Please log in.',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+              backgroundColor: const Color(0xFFFF5252),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } else {
+          _showSnack(
+            e is AuthFailure ? e.message : 'Verification failed. Try again.',
+            isError: true,
+          );
+        }
       }
     } finally {
       if (mounted) setState(() => _isVerifying = false);
