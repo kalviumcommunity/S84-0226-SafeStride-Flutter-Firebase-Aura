@@ -32,19 +32,19 @@ class TrailSpot {
 
   /// Convert to [RouteModel] so existing route-detail navigation works.
   RouteModel toRouteModel() => RouteModel(
-        id: id,
-        name: name,
-        category: category,
-        distance: distance,
-        safety: safety,
-        lighting: lighting,
-        traffic: 'Low',
-        crowd: crowd,
-        reviews: 0,
-        rating: safety / 20.0,
-        image: name,
-        emoji: emoji,
-      );
+    id: id,
+    name: name,
+    category: category,
+    distance: distance,
+    safety: safety,
+    lighting: lighting,
+    traffic: 'Low',
+    crowd: crowd,
+    reviews: 0,
+    rating: safety / 20.0,
+    image: name,
+    emoji: emoji,
+  );
 }
 
 // ── Trail card widget ─────────────────────────────────────────────────────────
@@ -125,8 +125,10 @@ class TrailCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 // Safety badge
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: safetyColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -174,8 +176,8 @@ class TrailCard extends StatelessWidget {
                   backgroundColor: isSelected
                       ? AppColors.neonGreen
                       : (isDarkMode
-                          ? AppColors.lightBlue
-                          : const Color(0xFFEEF2FF)),
+                            ? AppColors.lightBlue
+                            : const Color(0xFFEEF2FF)),
                   foregroundColor: isSelected
                       ? AppColors.textDark
                       : (isDarkMode ? Colors.white : AppColors.primaryBlue),
@@ -210,8 +212,11 @@ class TrailCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(icon,
-                size: 11, color: dark ? Colors.grey[400] : Colors.grey[600]),
+            Icon(
+              icon,
+              size: 11,
+              color: dark ? Colors.grey[400] : Colors.grey[600],
+            ),
             const SizedBox(height: 2),
             Text(
               label,

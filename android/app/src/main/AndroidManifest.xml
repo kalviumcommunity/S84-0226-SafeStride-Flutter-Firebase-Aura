@@ -14,7 +14,7 @@
              package name (com.example.safestride_app) for security. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_ANDROID_API_KEY"/>
+            android:value="AIzaSyBhyn_238QMqVbDwLRIDqRMt4YvDfl74_g"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
