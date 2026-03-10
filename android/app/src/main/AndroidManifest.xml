@@ -9,12 +9,11 @@
         android:icon="@mipmap/ic_launcher">
 
         <!-- Google Maps API key —
-             Replace YOUR_ANDROID_API_KEY with the key from Google Cloud Console.
-             Restrict the key to the "Maps SDK for Android" API and this app's
-             package name (com.example.safestride_app) for security. -->
+             Read from android/secrets.properties (gitignored) via Gradle
+             manifestPlaceholders. Never hardcode API keys in tracked files. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_ANDROID_API_KEY"/>
+            android:value="${MAPS_API_KEY}"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

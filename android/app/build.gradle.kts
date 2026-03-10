@@ -1,3 +1,12 @@
+import java.util.Properties
+
+// ── Load API keys from secrets.properties (gitignored) ──────────────────────
+val secretsFile = rootProject.file("secrets.properties")
+val secrets = Properties()
+if (secretsFile.exists()) {
+    secrets.load(secretsFile.inputStream())
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -37,6 +46,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Inject API keys as manifest placeholders (read from secrets.properties)
+        manifestPlaceholders["MAPS_API_KEY"] =
+            secrets.getProperty("MAPS_API_KEY", "MISSING_API_KEY")
     }
 
     buildTypes {
