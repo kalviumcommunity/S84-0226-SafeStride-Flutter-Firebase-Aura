@@ -5,10 +5,14 @@ import 'firebase_options.dart';
 import 'screens/auth_wrapper.dart';
 import 'constants/app_colors.dart';
 import 'config/routes.dart';
+import 'config/maps_loader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Load Google Maps JS API on web (no-op on mobile)
+  await MapsLoader.ensureInitialized();
 
   runApp(const SafeStrideApp());
 }

@@ -153,3 +153,7 @@ For additional documentation, see the [docs](./docs) folder:
 - [Quick Reference](./docs/QUICK_REFERENCE.md) - Quick reference guide
 
 ---
+# To run using .env
+```bash 
+flutter run -d chrome --dart-define-from-file=.env
+```

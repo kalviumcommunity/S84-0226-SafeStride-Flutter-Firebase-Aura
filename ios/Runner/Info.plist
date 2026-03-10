@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SafeStride needs your location to show nearby safe trails and routes on the map.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>SafeStride needs your location to provide real-time safety alerts while you walk or run.</string>
+	<key>MAPS_API_KEY</key>
+	<string>$(MAPS_API_KEY)</string>
 </dict>
 </plist>
