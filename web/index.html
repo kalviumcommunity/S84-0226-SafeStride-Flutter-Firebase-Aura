@@ -1,24 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="SafeStride - Smart Safe Path Navigation">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -30,24 +18,25 @@
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>safestride_app</title>
+
   <link rel="manifest" href="manifest.json">
 
   <!--
-    Google Maps JavaScript API — required for google_maps_flutter on web.
-    Replace YOUR_WEB_API_KEY with the key from Google Cloud Console.
-    Restrict the key to the "Maps JavaScript API" and your domain for security.
-  -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBhyn_238QMqVbDwLRIDqRMt4YvDfl74_g"></script>
-</head>
-<body>
-  <!--
-    You can customize the "flutter_bootstrap.js" script.
-    This is useful to provide a custom configuration to the Flutter loader
-    or to give the user feedback during the initialization process.
+    Google Maps JavaScript API is loaded dynamically from Dart code.
+    The API key is injected using:
 
-    For more details:
-    * https://docs.flutter.dev/platform-integration/web/initialization
+    flutter run --dart-define-from-file=.env
+
+    This keeps API keys out of version control.
   -->
+
+</head>
+
+<body>
+
+  <!-- Flutter Web Bootstrap -->
   <script src="flutter_bootstrap.js" async></script>
+
 </body>
+
 </html>
