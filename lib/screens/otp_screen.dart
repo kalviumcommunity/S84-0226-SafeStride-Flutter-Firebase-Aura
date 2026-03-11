@@ -7,6 +7,7 @@ class OtpScreen extends StatefulWidget {
   final String email;
   final String password;
   final String name;
+  final String activityType;
 
   /// The code returned by generateAndStoreOtp – shown to the user for demo
   /// purposes. In production this would arrive via email.
@@ -17,6 +18,7 @@ class OtpScreen extends StatefulWidget {
     required this.email,
     required this.password,
     required this.name,
+    this.activityType = 'runner',
     required this.demoCode,
   });
 
@@ -108,6 +110,7 @@ class _OtpScreenState extends State<OtpScreen>
         widget.email,
         widget.password,
         displayName: widget.name,
+        activityType: widget.activityType,
       );
 
       // 3. Pop all screens back to AuthWrapper (the root home).

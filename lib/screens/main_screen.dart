@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../screens/map_screen.dart';
 import '../screens/discover_screen.dart';
@@ -8,6 +9,7 @@ import '../screens/profile_screen.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../config/routes.dart';
+import '../services/user_preferences_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,6 +21,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _activeTab = 0;
   bool _isDarkMode = false;
+  final _prefsSvc = UserPreferencesService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDarkModePref();
+  }
+
+  Future<void> _loadDarkModePref() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final user = await _prefsSvc.getUser(uid);
+    if (user != null && mounted) {
+      setState(() => _isDarkMode = user.darkMode);
+    }
+  }
 
   void _handleRouteSelect(RouteModel route) {
     Navigator.pushNamed(
@@ -33,6 +51,10 @@ class _MainScreenState extends State<MainScreen> {
 
   void _toggleDarkMode() {
     setState(() => _isDarkMode = !_isDarkMode);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      _prefsSvc.toggleDarkMode(uid, _isDarkMode);
+    }
   }
 
   Widget _renderScreen() {

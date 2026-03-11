@@ -87,6 +87,7 @@ class _SignupScreenState extends State<SignupScreen>
               email: email,
               password: pass,
               name: name,
+              activityType: _selectedMode == 0 ? 'runner' : 'cyclist',
               demoCode: code,
             ),
           ),
