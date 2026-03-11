@@ -13,6 +13,16 @@ class RouteModel {
   final String emoji;
   final String? tag;
 
+  /// WGS-84 latitude of the route/trail location.
+  /// Set when the route originates from an Overpass API result.
+  /// `null` for hardcoded mock routes.
+  final double? latitude;
+
+  /// WGS-84 longitude of the route/trail location.
+  /// Set when the route originates from an Overpass API result.
+  /// `null` for hardcoded mock routes.
+  final double? longitude;
+
   RouteModel({
     required this.id,
     required this.name,
@@ -27,6 +37,8 @@ class RouteModel {
     required this.image,
     required this.emoji,
     this.tag,
+    this.latitude,
+    this.longitude,
   });
 }
 

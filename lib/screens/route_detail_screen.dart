@@ -3,6 +3,8 @@ import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
 import '../config/routes.dart';
+import '../screens/navigation_screen.dart';
+import '../services/routing_service.dart';
 import 'route_safety_screen.dart';
 
 class RouteDetailScreen extends StatelessWidget {
@@ -137,11 +139,15 @@ class RouteDetailScreen extends StatelessWidget {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: AppColors.getSafetyColor(routeData.safety).withOpacity(0.3),
+                          color: AppColors.getSafetyColor(
+                            routeData.safety,
+                          ).withOpacity(0.3),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.getSafetyColor(routeData.safety).withOpacity(0.4),
+                              color: AppColors.getSafetyColor(
+                                routeData.safety,
+                              ).withOpacity(0.4),
                               blurRadius: 24,
                               offset: const Offset(0, 8),
                             ),
@@ -197,7 +203,10 @@ class RouteDetailScreen extends StatelessWidget {
                             runSpacing: 8,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -212,7 +221,10 @@ class RouteDetailScreen extends StatelessWidget {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.2),
                                   borderRadius: BorderRadius.circular(12),
@@ -271,18 +283,46 @@ class RouteDetailScreen extends StatelessWidget {
                       offset: const Offset(0, -32),
                       child: Row(
                         children: [
-                          Expanded(child: _buildStatCard(Icons.map, routeData.distance, 'Distance', darkMode)),
+                          Expanded(
+                            child: _buildStatCard(
+                              Icons.map,
+                              routeData.distance,
+                              'Distance',
+                              darkMode,
+                            ),
+                          ),
                           const SizedBox(width: 16),
-                          Expanded(child: _buildStatCard(Icons.light_mode, routeData.lighting, 'Lighting', darkMode)),
+                          Expanded(
+                            child: _buildStatCard(
+                              Icons.light_mode,
+                              routeData.lighting,
+                              'Lighting',
+                              darkMode,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _buildStatCard(Icons.trending_up, routeData.traffic, 'Traffic', darkMode)),
+                        Expanded(
+                          child: _buildStatCard(
+                            Icons.trending_up,
+                            routeData.traffic,
+                            'Traffic',
+                            darkMode,
+                          ),
+                        ),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildStatCard(Icons.people, routeData.crowd, 'Crowd Level', darkMode)),
+                        Expanded(
+                          child: _buildStatCard(
+                            Icons.people,
+                            routeData.crowd,
+                            'Crowd Level',
+                            darkMode,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -302,7 +342,10 @@ class RouteDetailScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryBlue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 24,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -327,7 +370,9 @@ class RouteDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ...MockData.reviews.map((review) => _buildReviewCard(review, darkMode)).toList(),
+                    ...MockData.reviews
+                        .map((review) => _buildReviewCard(review, darkMode))
+                        .toList(),
                     const SizedBox(height: 120),
                   ]),
                 ),
@@ -344,20 +389,14 @@ class RouteDetailScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: darkMode
-                      ? [
-                          AppColors.darkBlue.withOpacity(0),
-                          AppColors.darkBlue,
-                        ]
-                      : [
-                          Colors.white.withOpacity(0),
-                          Colors.white,
-                        ],
+                      ? [AppColors.darkBlue.withOpacity(0), AppColors.darkBlue]
+                      : [Colors.white.withOpacity(0), Colors.white],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () => _startNavigation(context, routeData),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.neonGreen,
                   foregroundColor: AppColors.textDark,
@@ -370,10 +409,7 @@ class RouteDetailScreen extends StatelessWidget {
                 ),
                 child: const Text(
                   'Start Navigation',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -383,7 +419,12 @@ class RouteDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(IconData icon, String value, String label, bool darkMode) {
+  Widget _buildStatCard(
+    IconData icon,
+    String value,
+    String label,
+    bool darkMode,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -454,10 +495,7 @@ class RouteDetailScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: AppColors.blueGradient,
                 ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                ),
+                child: const Icon(Icons.person, color: Colors.white),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -479,7 +517,9 @@ class RouteDetailScreen extends StatelessWidget {
                           review.date,
                           style: TextStyle(
                             fontSize: 12,
-                            color: darkMode ? Colors.grey[400] : Colors.grey[500],
+                            color: darkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[500],
                           ),
                         ),
                       ],
@@ -494,8 +534,8 @@ class RouteDetailScreen extends StatelessWidget {
                           color: index < review.rating
                               ? AppColors.neonGreen
                               : darkMode
-                                  ? Colors.grey[600]
-                                  : Colors.grey[300],
+                              ? Colors.grey[600]
+                              : Colors.grey[300],
                         ),
                       ),
                     ),
@@ -532,6 +572,29 @@ class RouteDetailScreen extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// Opens [NavigationScreen] if the route has coordinates, otherwise shows
+  /// a snackbar explaining that navigation is unavailable for this route.
+  void _startNavigation(BuildContext context, RouteModel routeData) {
+    if (routeData.latitude == null || routeData.longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Navigation is not available for this route — no coordinates found.',
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            NavigationScreen(route: routeData, profile: RoutingProfile.foot),
       ),
     );
   }

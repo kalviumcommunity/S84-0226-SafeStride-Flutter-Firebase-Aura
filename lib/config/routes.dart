@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../screens/route_detail_screen.dart';
+import '../screens/navigation_screen.dart';
 import '../models/route_model.dart';
 import '../screens/main_screen.dart';
 import '../screens/landing_page.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/signup_screen.dart';
+import '../services/routing_service.dart';
 
 /// Route names as constants for type safety and maintainability
 class AppRoutes {
@@ -22,6 +24,7 @@ class AppRoutes {
   static const String alerts = '/alerts';
   static const String profile = '/profile';
   static const String routeDetail = '/route-detail';
+  static const String navigation = '/navigation';
 }
 
 /// Arguments class for type-safe argument passing
@@ -29,10 +32,7 @@ class RouteDetailArguments {
   final RouteModel route;
   final bool isDarkMode;
 
-  const RouteDetailArguments({
-    required this.route,
-    required this.isDarkMode,
-  });
+  const RouteDetailArguments({required this.route, required this.isDarkMode});
 }
 
 class ScreenArguments {
@@ -96,6 +96,17 @@ class RouteGenerator {
         }
         return _errorRoute(settings);
 
+      case AppRoutes.navigation:
+        if (settings.arguments is RouteModel) {
+          final route = settings.arguments as RouteModel;
+          return MaterialPageRoute(
+            builder: (_) =>
+                NavigationScreen(route: route, profile: RoutingProfile.foot),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+
       default:
         return _errorRoute(settings);
     }
@@ -105,19 +116,12 @@ class RouteGenerator {
   static Route<dynamic> _errorRoute(RouteSettings settings) {
     return MaterialPageRoute(
       builder: (context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('Error'),
-          backgroundColor: Colors.red,
-        ),
+        appBar: AppBar(title: const Text('Error'), backgroundColor: Colors.red),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 64,
-              ),
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 16),
               Text(
                 'Route not found: ${settings.name}',
@@ -128,10 +132,9 @@ class RouteGenerator {
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.home,
-                  (route) => false,
-                ),
+                onPressed: () => Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false),
                 child: const Text('Go to Home'),
               ),
             ],

@@ -31,6 +31,7 @@ class TrailSpot {
   });
 
   /// Convert to [RouteModel] so existing route-detail navigation works.
+  /// Passes [lat]/[lng] so the navigation screen can route to this trail.
   RouteModel toRouteModel() => RouteModel(
     id: id,
     name: name,
@@ -44,6 +45,8 @@ class TrailSpot {
     rating: safety / 20.0,
     image: name,
     emoji: emoji,
+    latitude: lat,
+    longitude: lng,
   );
 }
 
