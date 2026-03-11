@@ -65,9 +65,6 @@ class _NearbyTrailsWidgetState extends State<NearbyTrailsWidget> {
     } on LocationServiceException catch (e) {
       debugPrint('[NearbyTrailsWidget] Location error: $e');
       _handleLocationError(e);
-    } on PlacesApiException catch (e) {
-      debugPrint('[NearbyTrailsWidget] Places API error: $e');
-      if (mounted) setState(() => _errorMessage = e.message);
     } on PlacesNetworkException catch (e) {
       debugPrint('[NearbyTrailsWidget] Network error: $e');
       if (mounted) {

@@ -5,7 +5,6 @@ import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
 import '../config/routes.dart';
-import '../config/api_config.dart';
 import '../services/firestore_service.dart';
 import '../services/location_service.dart';
 import '../services/places_service.dart';
