@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/place.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
 import '../config/routes.dart';
+import '../config/api_config.dart';
 import '../services/firestore_service.dart';
+import '../services/location_service.dart';
+import '../services/places_service.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
@@ -24,6 +28,45 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String selectedCategory = 'trending';
   String searchQuery = '';
   bool isGridView = false; // Toggle between List and Grid view
+
+  // ── Nearby trails state ─────────────────────────────────────────────────────
+  List<Place> _nearbyTrails = const [];
+  bool _trailsLoading = false;
+  String? _trailsError;
+
+  // API key is read from lib/config/api_config.dart — update it there.
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNearbyTrails();
+  }
+
+  /// Obtains the user's GPS position, then queries PlacesService for nearby
+  /// parks and trails within 5 km. Updates [_nearbyTrails] via setState.
+  Future<void> _fetchNearbyTrails() async {
+    setState(() {
+      _trailsLoading = true;
+      _trailsError = null;
+    });
+    try {
+      final position = await LocationService.getCurrentLocation();
+      final places = await PlacesService().getNearbyTrails(
+        position.latitude,
+        position.longitude,
+      );
+      if (mounted) setState(() => _nearbyTrails = places);
+    } on LocationServiceException catch (e) {
+      if (mounted) setState(() => _trailsError = e.message);
+    } on PlacesException catch (e) {
+      if (mounted) setState(() => _trailsError = e.message);
+    } catch (e) {
+      if (mounted)
+        setState(() => _trailsError = 'Could not load nearby trails.');
+    } finally {
+      if (mounted) setState(() => _trailsLoading = false);
+    }
+  }
 
   final List<Map<String, dynamic>> categories = [
     {'id': 'trending', 'name': 'Trending', 'icon': Icons.trending_up},
@@ -262,10 +305,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   // ListView.builder implementation
   Widget _buildListView() {
     final routes = filteredRoutes;
+    // Slot layout:
+    //  0                  → "Featured Routes" header
+    //  1 … routes.length  → route cards
+    //  routes.length + 1  → nearby trails section
+    //  routes.length + 2  → community routes section
+    //  routes.length + 3  → bottom spacing
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount:
-          routes.length + 3, // +3 for header, community section, bottom spacing
+      itemCount: routes.length + 4,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -282,16 +330,353 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         }
 
         if (index == routes.length + 1) {
-          return _buildCommunityRoutesSection();
+          return _buildNearbyTrailsSection();
         }
 
         if (index == routes.length + 2) {
+          return _buildCommunityRoutesSection();
+        }
+
+        if (index == routes.length + 3) {
           return const SizedBox(height: 100);
         }
 
         final route = routes[index - 1];
         return _buildRouteCard(route);
       },
+    );
+  }
+
+  // ── Nearby Trails section ──────────────────────────────────────────────────
+
+  /// Builds the full "Nearby Parks & Trails" section with header, loading,
+  /// error, empty, and populated states.
+  Widget _buildNearbyTrailsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 28),
+        // Section header with refresh button
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Nearby Parks & Trails',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              ),
+            ),
+            GestureDetector(
+              onTap: _trailsLoading ? null : _fetchNearbyTrails,
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: widget.isDarkMode
+                      ? AppColors.mediumBlue
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.07),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: _trailsLoading
+                    ? Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: widget.isDarkMode
+                              ? AppColors.neonGreen
+                              : AppColors.primaryBlue,
+                        ),
+                      )
+                    : Icon(
+                        Icons.refresh_rounded,
+                        size: 18,
+                        color: widget.isDarkMode
+                            ? AppColors.neonGreen
+                            : AppColors.primaryBlue,
+                      ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Parks and trails within 5 km of you',
+          style: TextStyle(
+            fontSize: 13,
+            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // ── Loading state ───────────────────────────────────────────────────
+        if (_trailsLoading && _nearbyTrails.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: widget.isDarkMode
+                    ? AppColors.neonGreen
+                    : AppColors.primaryBlue,
+              ),
+            ),
+          )
+        // ── Error state ─────────────────────────────────────────────────────
+        else if (_trailsError != null)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.location_off_outlined,
+                  color: widget.isDarkMode
+                      ? Colors.grey[400]
+                      : Colors.grey[500],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _trailsError!,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: widget.isDarkMode
+                          ? Colors.grey[300]
+                          : AppColors.textDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        // ── Empty state ─────────────────────────────────────────────────────
+        else if (_nearbyTrails.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.forest_outlined,
+                  color: widget.isDarkMode
+                      ? AppColors.neonGreen
+                      : AppColors.primaryBlue,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'No nearby trails found.',
+                  style: TextStyle(
+                    color: widget.isDarkMode
+                        ? Colors.grey[300]
+                        : AppColors.textDark,
+                  ),
+                ),
+              ],
+            ),
+          )
+        // ── Populated state ─────────────────────────────────────────────────
+        else
+          Column(
+            children: _nearbyTrails
+                .map((place) => _buildPlaceCard(place))
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  /// Renders a single nearby-trail card for the given [place].
+  Widget _buildPlaceCard(Place place) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(widget.isDarkMode ? 0.25 : 0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // ── Left icon panel ───────────────────────────────────────────────
+          Container(
+            width: 80,
+            height: 88,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.horizontal(
+                left: Radius.circular(20),
+              ),
+              gradient: LinearGradient(
+                colors: widget.isDarkMode
+                    ? [AppColors.lightBlue, AppColors.mediumBlue]
+                    : [AppColors.lightBackground, Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.park_outlined,
+                size: 36,
+                color: widget.isDarkMode
+                    ? AppColors.neonGreen
+                    : AppColors.primaryBlue,
+              ),
+            ),
+          ),
+
+          // ── Content ───────────────────────────────────────────────────────
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name
+                  Text(
+                    place.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: widget.isDarkMode
+                          ? Colors.white
+                          : AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  // Address
+                  if (place.address != null)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          size: 13,
+                          color: widget.isDarkMode
+                              ? Colors.grey[400]
+                              : Colors.grey[500],
+                        ),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            place.address!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: widget.isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  const SizedBox(height: 6),
+                  // Coordinates row
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.my_location,
+                        size: 12,
+                        color: widget.isDarkMode
+                            ? Colors.grey[500]
+                            : Colors.grey[400],
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${place.latitude.toStringAsFixed(4)}, '
+                        '${place.longitude.toStringAsFixed(4)}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: widget.isDarkMode
+                              ? Colors.grey[500]
+                              : Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Rating badge ──────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: place.rating != null
+                ? Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode
+                          ? AppColors.neonGreen.withOpacity(0.15)
+                          : AppColors.neonGreen.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.star_rounded,
+                          size: 14,
+                          color: AppColors.neonGreen,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          place.rating!.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: widget.isDarkMode
+                                ? AppColors.neonGreen
+                                : AppColors.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Icon(
+                    Icons.chevron_right_rounded,
+                    color: widget.isDarkMode
+                        ? Colors.grey[600]
+                        : Colors.grey[400],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
