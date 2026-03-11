@@ -75,6 +75,7 @@ class AuthService {
     String email,
     String password, {
     String? displayName,
+    String activityType = 'runner',
   }) async {
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
@@ -90,6 +91,15 @@ class AuthService {
           'uid': cred.user!.uid,
           'email': email,
           'displayName': displayName ?? '',
+          'activityType': activityType,
+          'bio': '',
+          'darkMode': false,
+          'notificationsEnabled': true,
+          'preferredDistance': 10.0,
+          'savedRoutesCount': 0,
+          'reviewsCount': 0,
+          'favoritesCount': 0,
+          'totalDistanceKm': 0.0,
         });
       }
       return cred;

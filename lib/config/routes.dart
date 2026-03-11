@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../screens/route_detail_screen.dart';
 import '../screens/navigation_screen.dart';
+import '../screens/edit_profile_screen.dart';
 import '../models/route_model.dart';
+import '../models/user_model.dart';
 import '../screens/main_screen.dart';
 import '../screens/landing_page.dart';
 import '../screens/login/login_screen.dart';
@@ -25,6 +27,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String routeDetail = '/route-detail';
   static const String navigation = '/navigation';
+  static const String editProfile = '/edit-profile';
 }
 
 /// Arguments class for type-safe argument passing
@@ -102,6 +105,21 @@ class RouteGenerator {
           return MaterialPageRoute(
             builder: (_) =>
                 NavigationScreen(route: route, profile: RoutingProfile.foot),
+            settings: settings,
+          );
+        }
+        return _errorRoute(settings);
+
+      case AppRoutes.editProfile:
+        if (settings.arguments is Map<String, dynamic>) {
+          final args = settings.arguments as Map<String, dynamic>;
+          final userModel = args['userModel'] as UserModel;
+          final isDarkMode = args['isDarkMode'] as bool;
+          return MaterialPageRoute(
+            builder: (_) => EditProfileScreen(
+              userModel: userModel,
+              isDarkMode: isDarkMode,
+            ),
             settings: settings,
           );
         }
