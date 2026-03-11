@@ -1,10 +1,14 @@
 ﻿import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../config/api_config.dart';
 import '../constants/app_colors.dart';
+import '../models/place.dart';
 import '../models/route_model.dart';
 import '../config/routes.dart';
 import '../services/location_service.dart';
+import '../services/places_service.dart';
 import '../widgets/trail_card.dart';
 
 // ── Dark-mode map style JSON ──────────────────────────────────────────────────
@@ -24,26 +28,6 @@ const String _kDarkMapStyle = '''
   {"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#0a1f30"}]}
 ]
 ''';
-
-// ── Trail data ────────────────────────────────────────────────────────────────
-
-const List<TrailSpot> _kTrails = [
-  TrailSpot(id: 1, name: 'Riverside Trail', lat: 37.7851, lng: -122.4423,
-      distance: '5.2 km', lighting: 'Excellent', crowd: 'Moderate',
-      safety: 95, emoji: '🏃‍♂️', category: 'Runner'),
-  TrailSpot(id: 2, name: 'Park Loop', lat: 37.7681, lng: -122.4326,
-      distance: '3.8 km', lighting: 'Good', crowd: 'Low',
-      safety: 88, emoji: '🏃‍♀️', category: 'Runner'),
-  TrailSpot(id: 3, name: 'Forest Run', lat: 37.7714, lng: -122.4467,
-      distance: '9.4 km', lighting: 'Good', crowd: 'Low',
-      safety: 91, emoji: '🏃', category: 'Runner'),
-  TrailSpot(id: 4, name: 'Lake Path', lat: 37.7794, lng: -122.4102,
-      distance: '7.1 km', lighting: 'Moderate', crowd: 'High',
-      safety: 79, emoji: '🚴‍♀️', category: 'Cyclist'),
-  TrailSpot(id: 5, name: 'Harbor Circuit', lat: 37.7969, lng: -122.4089,
-      distance: '12.6 km', lighting: 'Excellent', crowd: 'Moderate',
-      safety: 86, emoji: '🚴‍♂️', category: 'Cyclist'),
-];
 
 // ── Map Screen ────────────────────────────────────────────────────────────────
 
@@ -66,13 +50,18 @@ class _MapScreenState extends State<MapScreen> {
   final ScrollController _cardScroll = ScrollController();
 
   String _mode = 'runner';
-  int _selectedId = 1;
+  int _selectedId = -1;
   bool _locationLoading = true;
   LatLng _center = const LatLng(37.7749, -122.4194);
   Set<Marker> _markers = {};
 
   // card width (252) + right margin (14) = 266
   static const double _cardStride = 266.0;
+
+  // ── Places state ─────────────────────────────────────────────────────────
+  List<Place> _places = const [];
+  bool _placesLoading = false;
+  String? _placesError;
 
   @override
   void initState() {
@@ -89,16 +78,106 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _fetchLocation() async {
     setState(() => _locationLoading = true);
-    final pos = await LocationService.getCurrentPosition();
+    try {
+      final pos = await LocationService.getCurrentLocation();
+      if (!mounted) return;
+      setState(() {
+        _center = LatLng(pos.latitude, pos.longitude);
+        _locationLoading = false;
+      });
+      if (_mapCompleter.isCompleted) {
+        final ctrl = await _mapCompleter.future;
+        ctrl.animateCamera(CameraUpdate.newLatLngZoom(_center, 13.5));
+      }
+      // Fetch real nearby places now that we have the user's position.
+      await _fetchNearbyPlaces(pos.latitude, pos.longitude);
+    } catch (_) {
+      if (mounted) setState(() => _locationLoading = false);
+    }
+  }
+
+  /// Queries PlacesService for parks/trails near [lat]/[lng] and converts
+  /// the results to [TrailSpot] objects for the existing card UI.
+  Future<void> _fetchNearbyPlaces(double lat, double lng) async {
     if (!mounted) return;
     setState(() {
-      _center = LatLng(pos.latitude, pos.longitude);
-      _locationLoading = false;
+      _placesLoading = true;
+      _placesError = null;
     });
-    if (_mapCompleter.isCompleted) {
-      final ctrl = await _mapCompleter.future;
-      ctrl.animateCamera(CameraUpdate.newLatLngZoom(_center, 13.5));
+    try {
+      final places = await PlacesService().getNearbyTrails(lat, lng);
+      if (!mounted) return;
+      setState(() {
+        _places = places;
+        _placesLoading = false;
+        _selectedId = places.isNotEmpty ? 1 : -1;
+        _buildMarkers();
+      });
+    } on PlacesException catch (e) {
+      if (mounted) {
+        setState(() {
+          _placesError = e.message;
+          _placesLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _placesError = 'Could not load nearby trails.';
+          _placesLoading = false;
+        });
+      }
     }
+  }
+
+  /// Converts a [Place] from the Places API into a [TrailSpot] that the
+  /// existing [TrailCard] widget and [_BottomPanel] can render.
+  TrailSpot _placeToTrailSpot(int id, Place place) {
+    // Derive a safety percentage from the Google rating (1–5 → 50–100 %).
+    final rating = place.rating;
+    final safePct = rating != null
+        ? ((rating / 5.0) * 100).clamp(50, 100).round()
+        : 70;
+
+    // Map star rating to a human-readable quality label (shown in the
+    // 'lighting' slot of TrailCard, which is the closest semantic match).
+    final String quality;
+    if (rating == null) {
+      quality = '—';
+    } else if (rating >= 4.5) {
+      quality = 'Excellent';
+    } else if (rating >= 4.0) {
+      quality = 'Good';
+    } else if (rating >= 3.0) {
+      quality = 'Fair';
+    } else {
+      quality = 'Low';
+    }
+
+    // Calculate walking distance from the user's current map centre.
+    final distM = Geolocator.distanceBetween(
+      _center.latitude,
+      _center.longitude,
+      place.latitude,
+      place.longitude,
+    );
+    final distStr = distM >= 1000
+        ? '${(distM / 1000).toStringAsFixed(1)} km'
+        : '${distM.round()} m';
+
+    return TrailSpot(
+      id: id,
+      name: place.name,
+      lat: place.latitude,
+      lng: place.longitude,
+      distance: distStr,
+      lighting: quality,
+      crowd: 'Park',
+      safety: safePct,
+      emoji: '🌿',
+      // Real places have no runner/cyclist distinction — show in both modes.
+      category: _mode == 'runner' ? 'Runner' : 'Cyclist',
+    );
   }
 
   void _buildMarkers() {
@@ -106,8 +185,8 @@ class _MapScreenState extends State<MapScreen> {
       final hue = t.safety >= 85
           ? BitmapDescriptor.hueGreen
           : t.safety >= 70
-              ? BitmapDescriptor.hueYellow
-              : BitmapDescriptor.hueRed;
+          ? BitmapDescriptor.hueYellow
+          : BitmapDescriptor.hueRed;
       return Marker(
         markerId: MarkerId('${t.id}'),
         position: LatLng(t.lat, t.lng),
@@ -155,10 +234,12 @@ class _MapScreenState extends State<MapScreen> {
     if (_cardScroll.hasClients) _cardScroll.jumpTo(0);
   }
 
-  List<TrailSpot> get _filteredTrails => _kTrails
-      .where((t) => _mode == 'runner'
-          ? t.category == 'Runner'
-          : t.category == 'Cyclist')
+  /// Converts the fetched [_places] list into [TrailSpot] objects for display.
+  /// All real places are shown regardless of mode (runner vs cyclist).
+  List<TrailSpot> get _filteredTrails => _places
+      .asMap()
+      .entries
+      .map((e) => _placeToTrailSpot(e.key + 1, e.value))
       .toList();
 
   void _showFilterSheet() {
@@ -175,19 +256,21 @@ class _MapScreenState extends State<MapScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Filter Trails',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode
-                        ? Colors.white
-                        : AppColors.textDark)),
+            Text(
+              'Filter Trails',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              ),
+            ),
             const SizedBox(height: 8),
-            Text('Advanced filters coming soon.',
-                style: TextStyle(
-                    color: widget.isDarkMode
-                        ? Colors.grey[400]
-                        : Colors.grey[600])),
+            Text(
+              'Advanced filters coming soon.',
+              style: TextStyle(
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 28),
           ],
         ),
@@ -202,8 +285,7 @@ class _MapScreenState extends State<MapScreen> {
       body: Stack(
         children: [
           GoogleMap(
-            initialCameraPosition:
-                CameraPosition(target: _center, zoom: 13.5),
+            initialCameraPosition: CameraPosition(target: _center, zoom: 13.5),
             onMapCreated: (ctrl) {
               if (!_mapCompleter.isCompleted) _mapCompleter.complete(ctrl);
             },
@@ -264,6 +346,8 @@ class _MapScreenState extends State<MapScreen> {
               selectedId: _selectedId,
               isDarkMode: widget.isDarkMode,
               cardScroll: _cardScroll,
+              isLoading: _placesLoading,
+              errorMessage: _placesError,
               onCardTap: _onCardTapped,
               onViewDetails: (trail) {
                 final model = trail.toRouteModel();
@@ -310,8 +394,9 @@ class _TopBar extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            (isDarkMode ? AppColors.darkBlue : Colors.white)
-                .withOpacity(isDarkMode ? 0.97 : 0.95),
+            (isDarkMode ? AppColors.darkBlue : Colors.white).withOpacity(
+              isDarkMode ? 0.97 : 0.95,
+            ),
             (isDarkMode ? AppColors.darkBlue : Colors.white).withOpacity(0.0),
           ],
           begin: Alignment.topCenter,
@@ -326,25 +411,30 @@ class _TopBar extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('TrailSync',
-                    style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.3,
-                        color: isDarkMode ? Colors.white : AppColors.textDark)),
-                Text('Explore nearby trails',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: isDarkMode
-                            ? Colors.grey[400]
-                            : Colors.grey[600])),
+                Text(
+                  'TrailSync',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: -0.3,
+                    color: isDarkMode ? Colors.white : AppColors.textDark,
+                  ),
+                ),
+                Text(
+                  'Explore nearby trails',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
               ],
             ),
           ),
           _ModeToggle(
-              isDarkMode: isDarkMode,
-              mode: mode,
-              onModeChanged: onModeChanged),
+            isDarkMode: isDarkMode,
+            mode: mode,
+            onModeChanged: onModeChanged,
+          ),
         ],
       ),
     );
@@ -375,15 +465,19 @@ class _ModeToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.10),
-              blurRadius: 12,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withOpacity(0.10),
+            blurRadius: 12,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _pill('runner', '🏃', 'Runner'),
-        _pill('cyclist', '🚴', 'Cyclist'),
-      ]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _pill('runner', '🏃', 'Runner'),
+          _pill('cyclist', '🚴', 'Cyclist'),
+        ],
+      ),
     );
   }
 
@@ -401,22 +495,28 @@ class _ModeToggle extends StatelessWidget {
           boxShadow: active
               ? [
                   BoxShadow(
-                      color: AppColors.neonGreen.withOpacity(0.38),
-                      blurRadius: 10)
+                    color: AppColors.neonGreen.withOpacity(0.38),
+                    blurRadius: 10,
+                  ),
                 ]
               : null,
         ),
-        child: Row(children: [
-          Text(emoji, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(label,
+        child: Row(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: 6),
+            Text(
+              label,
               style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: active
-                      ? AppColors.textDark
-                      : (isDarkMode ? Colors.grey[400] : Colors.grey[600]))),
-        ]),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: active
+                    ? AppColors.textDark
+                    : (isDarkMode ? Colors.grey[400] : Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -429,8 +529,11 @@ class _MapFab extends StatelessWidget {
   final bool isDarkMode;
   final VoidCallback onTap;
 
-  const _MapFab(
-      {required this.icon, required this.isDarkMode, required this.onTap});
+  const _MapFab({
+    required this.icon,
+    required this.isDarkMode,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -444,14 +547,17 @@ class _MapFab extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.14),
-                blurRadius: 12,
-                offset: const Offset(0, 4))
+              color: Colors.black.withOpacity(0.14),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
-        child: Icon(icon,
-            color: isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
-            size: 20),
+        child: Icon(
+          icon,
+          color: isDarkMode ? AppColors.neonGreen : AppColors.primaryBlue,
+          size: 20,
+        ),
       ),
     );
   }
@@ -466,14 +572,18 @@ class _BottomPanel extends StatelessWidget {
   final ScrollController cardScroll;
   final ValueChanged<TrailSpot> onCardTap;
   final ValueChanged<TrailSpot> onViewDetails;
+  final bool isLoading;
+  final String? errorMessage;
 
   const _BottomPanel({
     required this.trails,
     required this.selectedId,
     required this.isDarkMode,
     required this.cardScroll,
+    required this.isLoading,
     required this.onCardTap,
     required this.onViewDetails,
+    this.errorMessage,
   });
 
   @override
@@ -486,9 +596,10 @@ class _BottomPanel extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.12),
-              blurRadius: 20,
-              offset: const Offset(0, -4))
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: Column(
@@ -502,8 +613,9 @@ class _BottomPanel extends StatelessWidget {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.35),
-                    borderRadius: BorderRadius.circular(2)),
+                  color: Colors.grey.withOpacity(0.35),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
           ),
@@ -514,24 +626,33 @@ class _BottomPanel extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Nearby Trails',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : AppColors.textDark)),
+                Text(
+                  'Nearby Trails',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? Colors.white : AppColors.textDark,
+                  ),
+                ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                      color: AppColors.neonGreen.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Text('${trails.length} found',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: isDarkMode
-                              ? AppColors.neonGreen
-                              : AppColors.primaryBlue)),
+                    color: AppColors.neonGreen.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    '${trails.length} found',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDarkMode
+                          ? AppColors.neonGreen
+                          : AppColors.primaryBlue,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -540,13 +661,43 @@ class _BottomPanel extends StatelessWidget {
           // Horizontal card list
           SizedBox(
             height: 176,
-            child: trails.isEmpty
+            child: isLoading
+                // ── Loading ──────────────────────────────────────────────────
                 ? Center(
-                    child: Text('No trails for this mode.',
+                    child: CircularProgressIndicator(
+                      color: isDarkMode
+                          ? AppColors.neonGreen
+                          : AppColors.primaryBlue,
+                    ),
+                  )
+                // ── Error ────────────────────────────────────────────────────
+                : errorMessage != null && trails.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        errorMessage!,
+                        textAlign: TextAlign.center,
                         style: TextStyle(
-                            color: isDarkMode
-                                ? Colors.grey[400]
-                                : Colors.grey[600])))
+                          fontSize: 13,
+                          color: isDarkMode
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  )
+                // ── Empty ────────────────────────────────────────────────────
+                : trails.isEmpty
+                ? Center(
+                    child: Text(
+                      'No nearby trails found.',
+                      style: TextStyle(
+                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  )
+                // ── Results ──────────────────────────────────────────────────
                 : ListView.builder(
                     controller: cardScroll,
                     scrollDirection: Axis.horizontal,
