@@ -49,9 +49,15 @@ class PlacesService {
 
   final http.Client _client;
 
-  /// Overpass API interpreter endpoint.
-  /// Free to use, supports CORS for web browsers, no API key required.
-  static const String _baseUrl = 'https://overpass-api.de/api/interpreter';
+  /// Overpass interpreter endpoints (public mirrors).
+  ///
+  /// We try these sequentially so temporary outages (HTTP 502/503/504/429)
+  /// on one host do not break nearby-trail discovery.
+  static const List<String> _baseUrls = [
+    'https://overpass-api.de/api/interpreter',
+    'https://overpass.kumi.systems/api/interpreter',
+    'https://lz4.overpass-api.de/api/interpreter',
+  ];
 
   /// Default search radius in metres (10 km).
   static const int _defaultRadiusMetres = 10000;
@@ -116,62 +122,84 @@ out center;
   Future<List<Place>> _query(double lat, double lng, int radius) async {
     final query = _buildQuery(radius, lat, lng);
 
-    // ── Network request ─────────────────────────────────────────────────────
-    final http.Response response;
-    try {
-      response = await _client
-          .post(
-            Uri.parse(_baseUrl),
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'data=${Uri.encodeComponent(query)}',
-          )
-          .timeout(const Duration(seconds: 35));
-    } on Exception catch (e) {
-      throw PlacesNetworkException('Network request failed: $e');
-    }
+    PlacesException? lastRecoverableError;
 
-    // ── HTTP status ─────────────────────────────────────────────────────────
-    if (response.statusCode != 200) {
-      throw PlacesHttpException(
-        'Overpass API returned HTTP ${response.statusCode}.',
-        response.statusCode,
-      );
-    }
+    for (final baseUrl in _baseUrls) {
+      final http.Response response;
 
-    // ── JSON decoding ───────────────────────────────────────────────────────
-    final Map<String, dynamic> body;
-    try {
-      body = json.decode(response.body) as Map<String, dynamic>;
-    } on FormatException catch (e) {
-      throw PlacesParseException('Invalid JSON from Overpass API: $e');
-    }
-
-    // ── Debug: log raw element count ────────────────────────────────────────
-    final rawElements = body['elements'] as List<dynamic>? ?? const [];
-    print('Overpass elements returned: ${rawElements.length}');
-
-    if (rawElements.isEmpty) return const [];
-
-    // ── Parse & deduplicate by coordinates ─────────────────────────────────
-    // Deduplicate by rounded lat/lng (~11 m grid) so unnamed elements with
-    // identical coordinates are collapsed, but named and unnamed elements at
-    // different positions are both kept.
-    final seen = <String>{};
-    final places = <Place>[];
-
-    for (final item in rawElements) {
+      // ── Network request ─────────────────────────────────────────────────
       try {
-        final place = Place.fromOverpassJson(item as Map<String, dynamic>);
-        final key =
-            '${place.latitude.toStringAsFixed(4)}_${place.longitude.toStringAsFixed(4)}';
-        if (seen.add(key)) places.add(place);
-      } on FormatException {
-        // Only elements with no resolvable coordinates are skipped.
+        response = await _client
+            .post(
+              Uri.parse(baseUrl),
+              headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+              body: 'data=${Uri.encodeComponent(query)}',
+            )
+            .timeout(const Duration(seconds: 35));
+      } on Exception catch (e) {
+        lastRecoverableError = PlacesNetworkException(
+          'Network request failed for $baseUrl: $e',
+        );
         continue;
       }
+
+      // ── HTTP status ─────────────────────────────────────────────────────
+      if (response.statusCode != 200) {
+        // Recoverable overload / gateway statuses → try next mirror.
+        if (response.statusCode == 429 ||
+            response.statusCode == 502 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504) {
+          lastRecoverableError = PlacesHttpException(
+            'Overpass mirror $baseUrl returned HTTP ${response.statusCode}.',
+            response.statusCode,
+          );
+          continue;
+        }
+
+        // Non-recoverable client errors should fail fast.
+        throw PlacesHttpException(
+          'Overpass API returned HTTP ${response.statusCode}.',
+          response.statusCode,
+        );
+      }
+
+      // ── JSON decoding ───────────────────────────────────────────────────
+      final Map<String, dynamic> body;
+      try {
+        body = json.decode(response.body) as Map<String, dynamic>;
+      } on FormatException catch (e) {
+        throw PlacesParseException('Invalid JSON from Overpass API: $e');
+      }
+
+      // ── Debug: log raw element count ────────────────────────────────────
+      final rawElements = body['elements'] as List<dynamic>? ?? const [];
+      print('Overpass elements returned: ${rawElements.length}');
+
+      if (rawElements.isEmpty) return const [];
+
+      // ── Parse & deduplicate by coordinates ─────────────────────────────
+      final seen = <String>{};
+      final places = <Place>[];
+
+      for (final item in rawElements) {
+        try {
+          final place = Place.fromOverpassJson(item as Map<String, dynamic>);
+          final key =
+              '${place.latitude.toStringAsFixed(4)}_${place.longitude.toStringAsFixed(4)}';
+          if (seen.add(key)) places.add(place);
+        } on FormatException {
+          continue;
+        }
+      }
+
+      print('Trails after filtering: ${places.length}');
+      return places;
     }
 
-    print('Trails after filtering: ${places.length}');
-    return places;
+    if (lastRecoverableError != null) throw lastRecoverableError;
+    throw const PlacesNetworkException(
+      'All Overpass API mirrors are temporarily unavailable.',
+    );
   }
 }

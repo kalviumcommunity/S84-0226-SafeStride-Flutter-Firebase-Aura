@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../models/place.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
@@ -27,11 +30,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   String selectedCategory = 'trending';
   String searchQuery = '';
   bool isGridView = false; // Toggle between List and Grid view
+  final TextEditingController _searchController = TextEditingController();
 
   // ── Nearby trails state ─────────────────────────────────────────────────────
   List<Place> _nearbyTrails = const [];
   bool _trailsLoading = false;
   String? _trailsError;
+
+  // ── Search-location featured routes state ──────────────────────────────────
+  List<RouteModel> _searchLocationRoutes = const [];
+  bool _searchLocationLoading = false;
 
   // API key is read from lib/config/api_config.dart — update it there.
 
@@ -39,6 +47,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   void initState() {
     super.initState();
     _fetchNearbyTrails();
+    _loadFeaturedRoutesFromCurrentLocation();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   /// Obtains the user's GPS position, then queries PlacesService for nearby
@@ -58,13 +73,204 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     } on LocationServiceException catch (e) {
       if (mounted) setState(() => _trailsError = e.message);
     } on PlacesException catch (e) {
-      if (mounted) setState(() => _trailsError = e.message);
+      if (mounted)
+        setState(() => _trailsError = _friendlyPlacesError(e.message));
     } catch (e) {
       if (mounted)
         setState(() => _trailsError = 'Could not load nearby trails.');
     } finally {
       if (mounted) setState(() => _trailsLoading = false);
     }
+  }
+
+  String _friendlyPlacesError(String message) {
+    if (message.contains('HTTP 504') ||
+        message.contains('HTTP 503') ||
+        message.contains('HTTP 502') ||
+        message.contains('HTTP 429')) {
+      return 'Trail data server is busy. Please tap refresh in a few seconds.';
+    }
+    return message;
+  }
+
+  Future<void> _searchByLocation(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _searchLocationRoutes = const [];
+        });
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _searchLocationLoading = true);
+
+    try {
+      final uri = Uri.parse(
+        'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${Uri.encodeQueryComponent(trimmed)}',
+      );
+      final response = await http.get(
+        uri,
+        headers: {'User-Agent': 'SafeStride/1.0 (Route Discovery)'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Location search failed');
+      }
+
+      final data = json.decode(response.body) as List<dynamic>;
+      if (data.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No matching location found.')),
+          );
+        }
+        return;
+      }
+
+      final first = data.first as Map<String, dynamic>;
+      final lat = double.parse(first['lat'] as String);
+      final lng = double.parse(first['lon'] as String);
+
+      final places = await PlacesService().getNearbyTrails(lat, lng);
+      final localizedRoutes = places
+          .asMap()
+          .entries
+          .map((entry) => _placeToRoute(entry.key + 1, entry.value, lat, lng))
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _searchLocationRoutes = localizedRoutes;
+          selectedCategory = 'nearby';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not search this location.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _searchLocationLoading = false);
+    }
+  }
+
+  Future<void> _loadFeaturedRoutesFromCurrentLocation() async {
+    try {
+      final position = await LocationService.getCurrentLocation();
+      final places = await PlacesService().getNearbyTrails(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (!mounted || places.isEmpty) return;
+
+      final localizedRoutes = places
+          .asMap()
+          .entries
+          .map(
+            (entry) => _placeToRoute(
+              entry.key + 1,
+              entry.value,
+              position.latitude,
+              position.longitude,
+            ),
+          )
+          .toList();
+
+      setState(() {
+        _searchLocationRoutes = localizedRoutes;
+      });
+    } catch (_) {
+      // Keep mock fallback when location/overpass fails.
+    }
+  }
+
+  RouteModel _placeToRoute(
+    int id,
+    Place place,
+    double centerLat,
+    double centerLng,
+  ) {
+    final distM = Geolocator.distanceBetween(
+      centerLat,
+      centerLng,
+      place.latitude,
+      place.longitude,
+    );
+
+    final distanceText = distM >= 1000
+        ? '${(distM / 1000).toStringAsFixed(1)} km'
+        : '${distM.round()} m';
+
+    final rating = place.rating ?? 4.2;
+    final safety = ((rating / 5.0) * 100).clamp(60, 98).round();
+
+    String? tag;
+    if (id % 3 == 1) {
+      tag = 'Trending';
+    } else if (id % 3 == 2) {
+      tag = 'Popular';
+    } else {
+      tag = 'Safe';
+    }
+
+    return RouteModel(
+      id: id,
+      name: place.name,
+      category: 'Walk',
+      distance: distanceText,
+      safety: safety,
+      lighting: safety >= 85
+          ? 'Excellent'
+          : safety >= 70
+          ? 'Good'
+          : 'Moderate',
+      traffic: 'Low',
+      crowd: 'Moderate',
+      reviews: (rating * 28).round(),
+      rating: rating,
+      image: 'local trail',
+      emoji: '🌿',
+      tag: tag,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    );
+  }
+
+  double _routeDistanceKm(RouteModel route) {
+    final text = route.distance.toLowerCase().trim();
+    if (text.endsWith('km')) {
+      return double.tryParse(text.replaceAll('km', '').trim()) ?? 9999;
+    }
+    if (text.endsWith('m')) {
+      final metres = double.tryParse(text.replaceAll('m', '').trim()) ?? 999999;
+      return metres / 1000.0;
+    }
+    return 9999;
+  }
+
+  List<RouteModel> _sortRoutes(List<RouteModel> routes) {
+    final sorted = [...routes];
+    switch (selectedCategory) {
+      case 'safe':
+        sorted.sort((a, b) => b.safety.compareTo(a.safety));
+        break;
+      case 'top':
+        sorted.sort((a, b) => b.rating.compareTo(a.rating));
+        break;
+      case 'nearby':
+        sorted.sort(
+          (a, b) => _routeDistanceKm(a).compareTo(_routeDistanceKm(b)),
+        );
+        break;
+      case 'trending':
+      default:
+        sorted.sort((a, b) => b.reviews.compareTo(a.reviews));
+    }
+    return sorted;
   }
 
   final List<Map<String, dynamic>> categories = [
@@ -75,12 +281,18 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   ];
 
   List<RouteModel> get filteredRoutes {
-    return MockData.featuredRoutes
-        .where(
-          (route) =>
-              route.name.toLowerCase().contains(searchQuery.toLowerCase()),
-        )
-        .toList();
+    final source = _searchLocationRoutes.isNotEmpty
+        ? _searchLocationRoutes
+        : MockData.featuredRoutes;
+
+    final query = searchQuery.toLowerCase().trim();
+    final filtered = source.where((route) {
+      if (query.isEmpty) return true;
+      return route.name.toLowerCase().contains(query) ||
+          route.category.toLowerCase().contains(query);
+    }).toList();
+
+    return _sortRoutes(filtered);
   }
 
   @override
@@ -194,8 +406,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextField(
+                          controller: _searchController,
                           onChanged: (value) =>
                               setState(() => searchQuery = value),
+                          onSubmitted: _searchByLocation,
                           style: TextStyle(
                             color: widget.isDarkMode
                                 ? Colors.white
@@ -213,6 +427,24 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           ),
                         ),
                       ),
+                      if (_searchLocationLoading)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      else
+                        GestureDetector(
+                          onTap: () =>
+                              _searchByLocation(_searchController.text),
+                          child: Icon(
+                            Icons.near_me,
+                            color: widget.isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[500],
+                            size: 18,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -407,7 +639,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Parks and trails within 5 km of you',
+          'Parks and trails within 10 km of you',
           style: TextStyle(
             fontSize: 13,
             color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],

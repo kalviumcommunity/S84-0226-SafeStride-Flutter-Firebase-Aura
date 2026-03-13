@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -110,7 +111,7 @@ class RoutingService {
     final uri = Uri.parse(
       '$_baseUrl/route/v1/$profileStr/'
       '$startLng,$startLat;$endLng,$endLat'
-      '?overview=full&geometries=polyline',
+      '?overview=full&geometries=geojson',
     );
 
     // ── HTTP request ──────────────────────────────────────────────────────────
@@ -150,15 +151,75 @@ class RoutingService {
     }
 
     final route = routes.first as Map<String, dynamic>;
-    final geometry = route['geometry'] as String;
+    final geometry = route['geometry'] as Map<String, dynamic>;
     final distance = (route['distance'] as num).toDouble();
     final duration = (route['duration'] as num).toDouble();
 
+    final points = _parseGeoJsonLineString(geometry);
+    if (points.length < 2) {
+      throw const RoutingNoRouteException(
+        'OSRM returned an invalid route geometry.',
+      );
+    }
+
     return RouteResult(
-      points: _decodePolyline(geometry),
+      points: _sanitizePoints(points),
       distanceMetres: distance,
       durationSeconds: duration,
     );
+  }
+
+  static List<LatLng> _parseGeoJsonLineString(Map<String, dynamic> geometry) {
+    final coordinates = geometry['coordinates'] as List<dynamic>?;
+    if (coordinates == null) return const [];
+
+    final points = <LatLng>[];
+    for (final item in coordinates) {
+      final pair = item as List<dynamic>?;
+      if (pair == null || pair.length < 2) continue;
+
+      final lng = (pair[0] as num?)?.toDouble();
+      final lat = (pair[1] as num?)?.toDouble();
+      if (lat == null || lng == null) continue;
+
+      points.add(LatLng(lat, lng));
+    }
+
+    return points;
+  }
+
+  static List<LatLng> _sanitizePoints(List<LatLng> points) {
+    if (points.length < 2) return points;
+
+    final sanitized = <LatLng>[points.first];
+    for (int i = 1; i < points.length; i++) {
+      final prev = sanitized.last;
+      final current = points[i];
+
+      // Drop improbable GPS jumps that create long straight artifact lines.
+      // Distance computed in metres using a simple haversine approximation.
+      final jump = _distanceMeters(prev, current);
+      if (jump <= 800) {
+        sanitized.add(current);
+      }
+    }
+
+    if (sanitized.length < 2) return points;
+    return sanitized;
+  }
+
+  static double _distanceMeters(LatLng a, LatLng b) {
+    const earthRadius = 6371000.0;
+    final dLat = (b.latitude - a.latitude) * (3.141592653589793 / 180.0);
+    final dLng = (b.longitude - a.longitude) * (3.141592653589793 / 180.0);
+    final lat1 = a.latitude * (3.141592653589793 / 180.0);
+    final lat2 = b.latitude * (3.141592653589793 / 180.0);
+
+    final sinDLat = math.sin(dLat / 2);
+    final sinDLng = math.sin(dLng / 2);
+    final h =
+        sinDLat * sinDLat + sinDLng * sinDLng * math.cos(lat1) * math.cos(lat2);
+    return 2 * earthRadius * math.asin(math.sqrt(h));
   }
 
   // ── Polyline decoder ──────────────────────────────────────────────────────
