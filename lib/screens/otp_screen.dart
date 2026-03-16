@@ -77,8 +77,12 @@ class _OtpScreenState extends State<OtpScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    for (final c in _controllers) c.dispose();
-    for (final f in _focusNodes) f.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
+    for (final f in _focusNodes) {
+      f.dispose();
+    }
     _animController.dispose();
     super.dispose();
   }
@@ -164,7 +168,9 @@ class _OtpScreenState extends State<OtpScreen>
       );
       setState(() => _liveCode = newCode);
       _startTimer();
-      for (final c in _controllers) c.clear();
+      for (final c in _controllers) {
+        c.clear();
+      }
       _focusNodes[0].requestFocus();
       _showSnack('New code sent! (demo code: $newCode)');
     } catch (e) {

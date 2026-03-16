@@ -1092,7 +1092,7 @@ class _AnimatedGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: animation,
-      builder: (_, __) => CustomPaint(painter: _GridPainter(animation.value)),
+      builder: (_, _) => CustomPaint(painter: _GridPainter(animation.value)),
     );
   }
 }
@@ -1385,7 +1385,7 @@ class _StepConnector extends StatelessWidget {
       padding: const EdgeInsets.only(top: 30),
       child: AnimatedBuilder(
         animation: animation,
-        builder: (_, __) => SizedBox(
+        builder: (_, _) => SizedBox(
           width: 40,
           height: 3,
           child: ClipRRect(

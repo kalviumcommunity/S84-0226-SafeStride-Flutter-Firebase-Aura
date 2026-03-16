@@ -10,10 +10,10 @@ class EditProfileScreen extends StatefulWidget {
   final bool isDarkMode;
 
   const EditProfileScreen({
-    Key? key,
+    super.key,
     required this.userModel,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -270,7 +270,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                           value: _notificationsEnabled,
                           onChanged: (v) =>
                               setState(() => _notificationsEnabled = v),
-                          activeColor: AppColors.neonGreen,
+                          activeThumbColor: AppColors.neonGreen,
                         ),
                       ],
                     ),

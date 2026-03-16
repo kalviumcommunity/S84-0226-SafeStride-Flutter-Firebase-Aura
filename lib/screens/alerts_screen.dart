@@ -7,9 +7,9 @@ class AlertsScreen extends StatelessWidget {
   final bool isDarkMode;
 
   const AlertsScreen({
-    Key? key,
+    super.key,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   IconData _getAlertIcon(String type) {
     switch (type) {

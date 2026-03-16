@@ -11,16 +11,17 @@ import '../config/routes.dart';
 import '../services/firestore_service.dart';
 import '../services/location_service.dart';
 import '../services/places_service.dart';
+import '../services/discovery_engine.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
   final bool isDarkMode;
 
   const DiscoverScreen({
-    Key? key,
+    super.key,
     required this.onRouteSelect,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<DiscoverScreen> createState() => _DiscoverScreenState();
@@ -29,6 +30,7 @@ class DiscoverScreen extends StatefulWidget {
 class _DiscoverScreenState extends State<DiscoverScreen> {
   String selectedCategory = 'trending';
   String searchQuery = '';
+  int _minSafetyFilter = 0; // 0 means no filter
   bool isGridView = false; // Toggle between List and Grid view
   final TextEditingController _searchController = TextEditingController();
 
@@ -73,11 +75,13 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     } on LocationServiceException catch (e) {
       if (mounted) setState(() => _trailsError = e.message);
     } on PlacesException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _trailsError = _friendlyPlacesError(e.message));
+      }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(() => _trailsError = 'Could not load nearby trails.');
+      }
     } finally {
       if (mounted) setState(() => _trailsLoading = false);
     }
@@ -240,39 +244,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
-  double _routeDistanceKm(RouteModel route) {
-    final text = route.distance.toLowerCase().trim();
-    if (text.endsWith('km')) {
-      return double.tryParse(text.replaceAll('km', '').trim()) ?? 9999;
-    }
-    if (text.endsWith('m')) {
-      final metres = double.tryParse(text.replaceAll('m', '').trim()) ?? 999999;
-      return metres / 1000.0;
-    }
-    return 9999;
-  }
-
-  List<RouteModel> _sortRoutes(List<RouteModel> routes) {
-    final sorted = [...routes];
-    switch (selectedCategory) {
-      case 'safe':
-        sorted.sort((a, b) => b.safety.compareTo(a.safety));
-        break;
-      case 'top':
-        sorted.sort((a, b) => b.rating.compareTo(a.rating));
-        break;
-      case 'nearby':
-        sorted.sort(
-          (a, b) => _routeDistanceKm(a).compareTo(_routeDistanceKm(b)),
-        );
-        break;
-      case 'trending':
-      default:
-        sorted.sort((a, b) => b.reviews.compareTo(a.reviews));
-    }
-    return sorted;
-  }
-
   final List<Map<String, dynamic>> categories = [
     {'id': 'trending', 'name': 'Trending', 'icon': Icons.trending_up},
     {'id': 'safe', 'name': 'Safest', 'icon': Icons.shield},
@@ -285,14 +256,74 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ? _searchLocationRoutes
         : MockData.featuredRoutes;
 
-    final query = searchQuery.toLowerCase().trim();
-    final filtered = source.where((route) {
-      if (query.isEmpty) return true;
-      return route.name.toLowerCase().contains(query) ||
-          route.category.toLowerCase().contains(query);
-    }).toList();
+    final filtered = DiscoveryEngine.filterRoutes(
+      source: source,
+      searchQuery: searchQuery,
+      minSafetyFilter: _minSafetyFilter,
+    );
 
-    return _sortRoutes(filtered);
+    return DiscoveryEngine.sortRoutes(
+      routes: filtered,
+      selectedCategory: selectedCategory,
+    );
+  }
+
+  Widget _buildSafetyFilterRow() {
+    final filters = [
+      {'label': 'All', 'minScore': 0},
+      {'label': 'Safe (80%+)', 'minScore': 80},
+      {'label': 'Very Safe (90%+)', 'minScore': 90},
+      {'label': 'Safest (95%+)', 'minScore': 95},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isActive = _minSafetyFilter == filter['minScore'];
+          final minScore = filter['minScore'] as int;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(
+                filter['label'] as String,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  color: isActive
+                      ? Colors.white
+                      : (widget.isDarkMode ? Colors.grey[400] : Colors.grey[700]),
+                ),
+              ),
+              selected: isActive,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _minSafetyFilter = minScore);
+                }
+              },
+              selectedColor: AppColors.skyBlue,
+              backgroundColor: widget.isDarkMode
+                  ? AppColors.mediumBlue
+                  : Colors.grey[200],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isActive
+                      ? AppColors.skyBlue
+                      : (widget.isDarkMode ? Colors.transparent : Colors.grey[300]!),
+                ),
+              ),
+              showCheckmark: false,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -525,6 +556,9 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               },
             ),
           ),
+          const SizedBox(height: 16),
+          // Safety Filters
+          _buildSafetyFilterRow(),
           const SizedBox(height: 24),
           // Featured Routes
           Expanded(child: isGridView ? _buildGridView() : _buildListView()),
@@ -533,9 +567,81 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: widget.isDarkMode
+                    ? AppColors.mediumBlue.withOpacity(0.5)
+                    : Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.search_off_rounded,
+                size: 64,
+                color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'No routes found',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Try adjusting your search or safety filters to find more results.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  searchQuery = '';
+                  _minSafetyFilter = 0;
+                  _searchController.clear();
+                });
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Clear all filters'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.skyBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ListView.builder implementation
   Widget _buildListView() {
     final routes = filteredRoutes;
+
+    if (routes.isEmpty) {
+      return _buildEmptyState();
+    }
     // Slot layout:
     //  0                  → "Featured Routes" header
     //  1 … routes.length  → route cards

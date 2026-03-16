@@ -66,13 +66,13 @@ class TrailCard extends StatelessWidget {
   final VoidCallback onViewDetails;
 
   const TrailCard({
-    Key? key,
+    super.key,
     required this.trail,
     required this.isSelected,
     required this.isDarkMode,
     required this.onTap,
     required this.onViewDetails,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
