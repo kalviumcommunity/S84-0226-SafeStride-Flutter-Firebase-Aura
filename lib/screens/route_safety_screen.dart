@@ -7,10 +7,10 @@ class SafetyInfoDisplay extends StatelessWidget {
   final bool isDarkMode;
 
   const SafetyInfoDisplay({
-    Key? key,
+    super.key,
     required this.route,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -121,11 +121,11 @@ class SafetyRatingForm extends StatefulWidget {
   final bool isDarkMode;
 
   const SafetyRatingForm({
-    Key? key,
+    super.key,
     required this.route,
     required this.onRatingSubmitted,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<SafetyRatingForm> createState() => _SafetyRatingFormState();
@@ -313,10 +313,10 @@ class RouteSafetyRatingScreen extends StatefulWidget {
   final bool isDarkMode;
 
   const RouteSafetyRatingScreen({
-    Key? key,
+    super.key,
     required this.route,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<RouteSafetyRatingScreen> createState() => _RouteSafetyRatingScreenState();

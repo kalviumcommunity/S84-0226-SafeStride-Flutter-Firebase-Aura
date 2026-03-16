@@ -372,7 +372,7 @@ class RouteDetailScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     ...MockData.reviews
                         .map((review) => _buildReviewCard(review, darkMode))
-                        .toList(),
+                        ,
                     const SizedBox(height: 120),
                   ]),
                 ),

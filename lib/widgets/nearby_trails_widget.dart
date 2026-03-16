@@ -166,7 +166,7 @@ class _NearbyTrailsWidgetState extends State<NearbyTrailsWidget> {
               Expanded(
                 child: ListView.separated(
                   itemCount: _places.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, index) => _PlaceCard(place: _places[index]),
                 ),
               ),

@@ -35,10 +35,10 @@ class MapScreen extends StatefulWidget {
   final bool isDarkMode;
 
   const MapScreen({
-    Key? key,
+    super.key,
     required this.onRouteSelect,
     required this.isDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<MapScreen> createState() => _MapScreenState();

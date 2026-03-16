@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Firebase Firestore Security Rules for SafeStride
+
+# This file contains the Firestore security rules that should be applied to your Firebase project.
+# 
+# To apply these rules:
+# 1. Go to Firebase Console > Firestore Database > Rules
+# 2. Replace the current rules with the content below
+# 3. Click "Publish"
+
+rules_v2 {
+  match /databases/{database}/documents {
+    // Allow read/write access on all documents to authenticated users
+    match /users/{userId} {
+      // Allow users to read/write their own profile
+      allow read, write: if request.auth.uid == userId;
+      
+      // Allow subcollections (favorites, routes, etc.)
+      match /{document=**} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    // Pending OTP verification (temporary)
+    match /pending_verifications/{verificationId} {
+      // Allow write during signup (unauthenticated)
+      allow write: if true;
+      // Allow read during OTP verification
+      allow read: if true;
+    }
+
+    // Public route data (read-only for all, write for admins)
+    match /routes/{routeId} {
+      // Anyone can read public routes
+      allow read: if true;
+      // Only admins can write
+      allow write: if request.auth.token.admin == true;
+      
+      // Comments and ratings
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth.uid != null;
+        allow update, delete: if request.auth.uid == resource.data.userId;
+      }
+    }
+
+    // User-specific saved routes
+    match /users/{userId}/savedRoutes/{routeId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // User-specific favorites
+    match /users/{userId}/favorites/{favoriteId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // User activity and statistics
+    match /users/{userId}/activity/{activityId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

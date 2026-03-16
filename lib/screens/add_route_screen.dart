@@ -6,7 +6,7 @@ import '../services/firestore_service.dart';
 class AddRouteScreen extends StatefulWidget {
   final bool isDarkMode;
 
-  const AddRouteScreen({Key? key, required this.isDarkMode}) : super(key: key);
+  const AddRouteScreen({super.key, required this.isDarkMode});
 
   @override
   State<AddRouteScreen> createState() => _AddRouteScreenState();

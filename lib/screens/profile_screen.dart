@@ -14,10 +14,10 @@ class ProfileScreen extends StatefulWidget {
   final VoidCallback onToggleDarkMode;
 
   const ProfileScreen({
-    Key? key,
+    super.key,
     required this.isDarkMode,
     required this.onToggleDarkMode,
-  }) : super(key: key);
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -280,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             trailing: Switch(
                               value: dark,
                               onChanged: (_) => widget.onToggleDarkMode(),
-                              activeColor: AppColors.neonGreen,
+                              activeThumbColor: AppColors.neonGreen,
                             ),
                             onTap: widget.onToggleDarkMode,
                           ),
@@ -294,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 await _prefsSvc.toggleNotifications(
                                     user.uid, v);
                               },
-                              activeColor: AppColors.neonGreen,
+                              activeThumbColor: AppColors.neonGreen,
                             ),
                           ),
                           _buildDivider(),
@@ -430,7 +430,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            if (trailing != null) trailing,
+            ?trailing,
           ],
         ),
       ),
