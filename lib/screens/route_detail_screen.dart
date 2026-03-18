@@ -10,13 +10,11 @@ import 'route_safety_screen.dart';
 class RouteDetailScreen extends StatelessWidget {
   final RouteModel? route;
   final VoidCallback? onBack;
-  final bool? isDarkMode;
 
   const RouteDetailScreen({
     super.key,
     this.route,
     this.onBack,
-    this.isDarkMode,
   });
 
   @override
@@ -27,7 +25,7 @@ class RouteDetailScreen extends StatelessWidget {
         : null;
 
     final routeData = route ?? args!.route;
-    final darkMode = isDarkMode ?? args?.isDarkMode ?? false;
+    final darkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: darkMode ? AppColors.darkBlue : AppColors.lightGray,
@@ -334,7 +332,6 @@ class RouteDetailScreen extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => RouteSafetyRatingScreen(
                               route: routeData,
-                              isDarkMode: darkMode,
                             ),
                           ),
                         );

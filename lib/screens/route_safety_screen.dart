@@ -15,13 +15,13 @@ class SafetyInfoDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safetyColor = AppColors.getSafetyColor(route.safety);
-    final textColor = isDarkMode ? Colors.white : Colors.black;
+    final textColor = (Theme.of(context).brightness == Brightness.dark) ? Colors.white : Colors.black;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.darkBlue.withOpacity(0.3) : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBlue.withOpacity(0.3) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: safetyColor,
@@ -57,16 +57,19 @@ class SafetyInfoDisplay extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildStatCard(
+                context: context,
                 title: 'Safety Score',
                 value: '${route.safety}%',
                 color: safetyColor,
               ),
               _buildStatCard(
+                context: context,
                 title: 'User Rating',
                 value: '${route.rating}/5',
                 color: safetyColor,
               ),
               _buildStatCard(
+                context: context,
                 title: 'Total Reviews',
                 value: '${route.reviews}',
                 color: safetyColor,
@@ -79,6 +82,7 @@ class SafetyInfoDisplay extends StatelessWidget {
   }
 
   Widget _buildStatCard({
+    required BuildContext context,
     required String title,
     required String value,
     required Color color,
@@ -87,7 +91,7 @@ class SafetyInfoDisplay extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isDarkMode ? AppColors.darkBlue.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
+          color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBlue.withOpacity(0.2) : Colors.grey.withOpacity(0.1),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -96,7 +100,7 @@ class SafetyInfoDisplay extends StatelessWidget {
               title,
               style: TextStyle(
                 fontSize: 12,
-                color: isDarkMode ? Colors.white70 : Colors.black54,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white70 : Colors.black54,
               ),
             ),
             const SizedBox(height: 4),
@@ -183,13 +187,13 @@ class _SafetyRatingFormState extends State<SafetyRatingForm> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = widget.isDarkMode ? Colors.white : Colors.black;
+    final textColor = (Theme.of(context).brightness == Brightness.dark) ? Colors.white : Colors.black;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? AppColors.darkBlue.withOpacity(0.3) : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBlue.withOpacity(0.3) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: AppColors.primaryBlue,
@@ -237,7 +241,7 @@ class _SafetyRatingFormState extends State<SafetyRatingForm> {
                   }
                 },
                 selectedColor: AppColors.primaryBlue,
-                backgroundColor: widget.isDarkMode 
+                backgroundColor: (Theme.of(context).brightness == Brightness.dark) 
                     ? AppColors.darkBlue.withOpacity(0.3) 
                     : Colors.grey.withOpacity(0.2),
                 avatar: selectedRating == index + 1
@@ -255,13 +259,13 @@ class _SafetyRatingFormState extends State<SafetyRatingForm> {
                 color: textColor.withOpacity(0.7),
               ),
               filled: true,
-              fillColor: widget.isDarkMode 
+              fillColor: (Theme.of(context).brightness == Brightness.dark) 
                   ? AppColors.darkBlue.withOpacity(0.2) 
                   : Colors.grey.withOpacity(0.1),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(
-                  color: widget.isDarkMode ? Colors.white30 : Colors.black12,
+                  color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white30 : Colors.black12,
                   width: 1,
                 ),
               ),
@@ -310,12 +314,10 @@ class _SafetyRatingFormState extends State<SafetyRatingForm> {
 
 class RouteSafetyRatingScreen extends StatefulWidget {
   final RouteModel route;
-  final bool isDarkMode;
 
   const RouteSafetyRatingScreen({
     super.key,
     required this.route,
-    required this.isDarkMode,
   });
 
   @override
@@ -333,7 +335,7 @@ class _RouteSafetyRatingScreenState extends State<RouteSafetyRatingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = widget.isDarkMode ? Colors.white : Colors.black;
+    final textColor = (Theme.of(context).brightness == Brightness.dark) ? Colors.white : Colors.black;
 
     return Scaffold(
       appBar: AppBar(
@@ -348,20 +350,20 @@ class _RouteSafetyRatingScreenState extends State<RouteSafetyRatingScreen> {
           children: [
             SafetyInfoDisplay(
               route: widget.route,
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: (Theme.of(context).brightness == Brightness.dark),
             ),
             const SizedBox(height: 20),
             SafetyRatingForm(
               route: widget.route,
               onRatingSubmitted: _handleRatingSubmitted,
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: (Theme.of(context).brightness == Brightness.dark),
             ),
             if (isRatingSubmitted)
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: widget.isDarkMode ? AppColors.darkBlue.withOpacity(0.3) : Colors.green.withOpacity(0.1),
+                  color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBlue.withOpacity(0.3) : Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: Colors.green,

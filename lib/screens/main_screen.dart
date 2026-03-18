@@ -9,7 +9,7 @@ import '../screens/profile_screen.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../config/routes.dart';
-import '../services/user_preferences_service.dart';
+import '../config/routes.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,75 +20,40 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _activeTab = 0;
-  bool _isDarkMode = false;
-  final _prefsSvc = UserPreferencesService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDarkModePref();
-  }
-
-  Future<void> _loadDarkModePref() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) return;
-    final user = await _prefsSvc.getUser(uid);
-    if (user != null && mounted) {
-      setState(() => _isDarkMode = user.darkMode);
-    }
-  }
 
   void _handleRouteSelect(RouteModel route) {
     Navigator.pushNamed(
       context,
       AppRoutes.routeDetail,
-      arguments: RouteDetailArguments(route: route, isDarkMode: _isDarkMode),
+      arguments: RouteDetailArguments(route: route),
     );
-  }
-
-  void _toggleDarkMode() {
-    setState(() => _isDarkMode = !_isDarkMode);
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      _prefsSvc.toggleDarkMode(uid, _isDarkMode);
-    }
   }
 
   Widget _renderScreen() {
     switch (_activeTab) {
       case 0:
-        return MapScreen(
-          onRouteSelect: _handleRouteSelect,
-          isDarkMode: _isDarkMode,
-        );
+        return MapScreen(onRouteSelect: _handleRouteSelect);
       case 1:
-        return DiscoverScreen(
-          onRouteSelect: _handleRouteSelect,
-          isDarkMode: _isDarkMode,
-        );
+        return DiscoverScreen(onRouteSelect: _handleRouteSelect);
       case 2:
-        return AddRouteScreen(isDarkMode: _isDarkMode);
+        return const AddRouteScreen();
       case 3:
-        return AlertsScreen(isDarkMode: _isDarkMode);
+        return const AlertsScreen();
       case 4:
-        return ProfileScreen(
-          isDarkMode: _isDarkMode,
-          onToggleDarkMode: _toggleDarkMode,
-        );
+        return const ProfileScreen();
       default:
-        return MapScreen(
-          onRouteSelect: _handleRouteSelect,
-          isDarkMode: _isDarkMode,
-        );
+        return MapScreen(onRouteSelect: _handleRouteSelect);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: _isDarkMode
+          gradient: isDarkMode
               ? const LinearGradient(
                   colors: [AppColors.darkBlue, AppColors.darkBlue],
                 )
@@ -102,12 +67,12 @@ class _MainScreenState extends State<MainScreen> {
                   end: Alignment.bottomCenter,
                 ),
         ),
-        child: Stack(children: [_renderScreen(), _buildBottomNav()]),
+        child: Stack(children: [_renderScreen(), _buildBottomNav(isDarkMode)]),
       ),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(bool isDarkMode) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -119,11 +84,11 @@ class _MainScreenState extends State<MainScreen> {
             constraints: const BoxConstraints(maxWidth: 448),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             decoration: BoxDecoration(
-              color: _isDarkMode ? AppColors.mediumBlue : Colors.white,
+              color: isDarkMode ? AppColors.mediumBlue : Colors.white,
               borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(_isDarkMode ? 0.3 : 0.08),
+                  color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.08),
                   blurRadius: 24,
                   offset: const Offset(0, -4),
                 ),
@@ -132,11 +97,11 @@ class _MainScreenState extends State<MainScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildNavItem(Icons.map, 0),
-                _buildNavItem(Icons.explore, 1),
-                _buildNavItem(Icons.add_circle, 2),
-                _buildNavItem(Icons.notifications, 3),
-                _buildNavItem(Icons.person, 4),
+                _buildNavItem(Icons.map, 0, isDarkMode),
+                _buildNavItem(Icons.explore, 1, isDarkMode),
+                _buildNavItem(Icons.add_circle, 2, isDarkMode),
+                _buildNavItem(Icons.notifications, 3, isDarkMode),
+                _buildNavItem(Icons.person, 4, isDarkMode),
               ],
             ),
           ),
@@ -145,7 +110,7 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
+  Widget _buildNavItem(IconData icon, int index, bool isDarkMode) {
     final isActive = _activeTab == index;
 
     return GestureDetector(
@@ -154,7 +119,7 @@ class _MainScreenState extends State<MainScreen> {
         icon,
         color: isActive
             ? AppColors.neonGreen
-            : _isDarkMode
+            : isDarkMode
             ? Colors.grey[400]
             : Colors.grey[500],
       ),

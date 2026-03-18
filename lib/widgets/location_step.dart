@@ -179,12 +179,12 @@ class _LocationStepState extends State<LocationStep> {
           width: double.infinity,
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+            color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(
-                  alpha: widget.isDarkMode ? 0.18 : 0.08,
+                  alpha: (Theme.of(context).brightness == Brightness.dark) ? 0.18 : 0.08,
                 ),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
@@ -198,7 +198,7 @@ class _LocationStepState extends State<LocationStep> {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                  color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -207,7 +207,7 @@ class _LocationStepState extends State<LocationStep> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: widget.isDarkMode
+                  color: (Theme.of(context).brightness == Brightness.dark)
                       ? Colors.grey.shade300
                       : Colors.grey.shade700,
                 ),
@@ -392,7 +392,7 @@ class _LocationStepState extends State<LocationStep> {
             'Back',
             style: TextStyle(
               fontWeight: FontWeight.w700,
-              color: widget.isDarkMode
+              color: (Theme.of(context).brightness == Brightness.dark)
                   ? Colors.grey.shade300
                   : Colors.grey.shade700,
             ),

@@ -5,19 +5,15 @@ import '../constants/mock_data.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/user_preferences_service.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
 import 'edit_profile_screen.dart';
 
 /// Profile tab — streams the user's Firestore profile in real time and renders
 /// stats, settings, and saved routes.
 class ProfileScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final VoidCallback onToggleDarkMode;
-
-  const ProfileScreen({
-    super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
-  });
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -28,40 +24,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) {
-      return const Scaffold(body: Center(child: Text('Not signed in')));
+    final themeProvider = context.watch<ThemeProvider>();
+    final userProvider = context.watch<UserProvider>();
+    final isDarkMode = themeProvider.isDark;
+
+    if (!userProvider.isLoaded) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
-    return StreamBuilder<UserModel?>(
-      stream: _prefsSvc.userStream(firebaseUser.uid),
-      builder: (context, snapshot) {
-        // While loading, show a skeleton-ish progress indicator.
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            backgroundColor: widget.isDarkMode
-                ? AppColors.darkBlue
-                : AppColors.lightBackground,
-            body: const Center(child: CircularProgressIndicator()),
-          );
-        }
+    final user = userProvider.user!;
 
-        // Build a UserModel — either from Firestore or a sensible default.
-        final userModel = snapshot.data ??
-            UserModel(
-              uid: firebaseUser.uid,
-              email: firebaseUser.email ?? '',
-              displayName: firebaseUser.displayName ?? 'SafeStride User',
-            );
-
-        return _buildBody(context, userModel);
-      },
-    );
+    return _buildBody(context, user, isDarkMode);
   }
 
   // ── Main Body ────────────────────────────────────────────────────────────
-  Widget _buildBody(BuildContext context, UserModel user) {
-    final dark = widget.isDarkMode;
+  Widget _buildBody(BuildContext context, UserModel user, bool isDarkMode) {
+    final dark = isDarkMode;
     final displayName =
         user.displayName.isNotEmpty ? user.displayName : 'SafeStride User';
     final bio = user.bio.isNotEmpty ? user.bio : 'No bio yet';
@@ -279,10 +260,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             title: dark ? 'Dark Mode' : 'Light Mode',
                             trailing: Switch(
                               value: dark,
-                              onChanged: (_) => widget.onToggleDarkMode(),
+                              onChanged: (_) => context.read<ThemeProvider>().toggle(user.uid),
                               activeThumbColor: AppColors.neonGreen,
                             ),
-                            onTap: widget.onToggleDarkMode,
+                            onTap: () => context.read<ThemeProvider>().toggle(user.uid),
                           ),
                           _buildDivider(),
                           _buildSettingItem(
@@ -355,7 +336,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => EditProfileScreen(
           userModel: user,
-          isDarkMode: widget.isDarkMode,
         ),
       ),
     );
@@ -363,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Helper Widgets ───────────────────────────────────────────────────────
   Widget _buildStatCard(IconData icon, String value, String label) {
-    final dark = widget.isDarkMode;
+    final dark = (Theme.of(context).brightness == Brightness.dark);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -410,7 +390,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Widget? trailing,
     VoidCallback? onTap,
   }) {
-    final dark = widget.isDarkMode;
+    final dark = (Theme.of(context).brightness == Brightness.dark);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -441,12 +421,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Divider(
       height: 1,
       thickness: 1,
-      color: widget.isDarkMode ? AppColors.lightBlue : Colors.grey[100],
+      color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.lightBlue : Colors.grey[100],
     );
   }
 
   Widget _buildSavedRouteCard(route) {
-    final dark = widget.isDarkMode;
+    final dark = (Theme.of(context).brightness == Brightness.dark);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
