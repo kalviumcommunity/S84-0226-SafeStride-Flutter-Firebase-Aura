@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import '../constants/app_colors.dart';
 import '../services/firestore_service.dart';
+import '../widgets/location_step.dart';
 
 class AddRouteScreen extends StatefulWidget {
   final bool isDarkMode;
@@ -13,8 +17,13 @@ class AddRouteScreen extends StatefulWidget {
 }
 
 class _AddRouteScreenState extends State<AddRouteScreen> {
+  // Debug-only probe to verify Step 2 render path quickly.
+  static const bool _debugStep2Probe = false;
   int step = 1;
   String? routeType;
+  List<LatLng> _routePoints = <LatLng>[];
+  final ImagePicker _imagePicker = ImagePicker();
+  final List<XFile> _selectedMedia = <XFile>[];
 
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
@@ -51,6 +60,21 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         );
         return;
       }
+
+      if (_routePoints.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Please create a route on the map first'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+
       _formKey.currentState?.save();
       _saveToFirestore();
     } else {
@@ -84,6 +108,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
       final routeId = '${uid}_${DateTime.now().millisecondsSinceEpoch}';
+      final photoUrls = await _uploadRoutePhotos(uid, routeId);
 
       await FirestoreService().addRoute(routeId, {
         'routeId': routeId,
@@ -96,6 +121,10 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         'safety': 0,
         'rating': 0.0,
         'reviews': 0,
+        'routePoints': _routePoints
+            .map((point) => {'lat': point.latitude, 'lng': point.longitude})
+            .toList(),
+        'photoUrls': photoUrls,
       });
 
       if (!mounted) return;
@@ -134,6 +163,8 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             _distanceController.clear();
             _emailController.clear();
             _descriptionController.clear();
+            _routePoints = <LatLng>[];
+            _selectedMedia.clear();
           });
         }
       });
@@ -153,6 +184,45 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<List<String>> _uploadRoutePhotos(String uid, String routeId) async {
+    if (_selectedMedia.isEmpty) {
+      return <String>[];
+    }
+
+    final FirebaseStorage storage = FirebaseStorage.instance;
+    final List<String> uploadedUrls = <String>[];
+
+    for (int index = 0; index < _selectedMedia.length; index++) {
+      final XFile image = _selectedMedia[index];
+      final Reference ref = storage.ref().child(
+        'routes/$uid/$routeId/photo_$index.jpg',
+      );
+
+      final bytes = await image.readAsBytes();
+      await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+
+      final url = await ref.getDownloadURL();
+      uploadedUrls.add(url);
+    }
+
+    return uploadedUrls;
+  }
+
+  Future<void> _pickMedia(ImageSource source) async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: source,
+      imageQuality: 80,
+    );
+
+    if (image == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedMedia.add(image);
+    });
   }
 
   @override
@@ -370,6 +440,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   Widget _buildStepContent() {
+    debugPrint('[AddRouteScreen] Rendering step $step');
     switch (step) {
       case 1:
         return _buildStep1();
@@ -698,115 +769,53 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   }
 
   Widget _buildStep2() {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: widget.isDarkMode
-                  ? AppColors.lightBlue
-                  : Colors.grey[200]!,
-              width: 2,
-              style: BorderStyle.solid,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: widget.isDarkMode
-                      ? AppColors.lightBlue
-                      : const Color(0xFFDBEAFE),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.map,
-                  size: 32,
-                  color: widget.isDarkMode
-                      ? AppColors.neonGreen
-                      : AppColors.primaryBlue,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Mark Your Route',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Tap on the map to mark the starting point and route path',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: widget.isDarkMode
-                      ? Colors.grey[300]
-                      : Colors.grey[700],
-                ),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.neonGreen,
-                  foregroundColor: AppColors.textDark,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Open Map',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
+    debugPrint('[AddRouteScreen] Building LocationStep (step=2)');
+
+    if (_debugStep2Probe) {
+      return Container(
+        height: 320,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.amber.withValues(alpha: 0.25),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => setState(() => step = 3),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.neonGreen,
-              foregroundColor: AppColors.textDark,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        child: const Text(
+          'Step 2 probe: Location step render path is active',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      );
+    }
+
+    return ConstrainedBox(
+      // SingleChildScrollView gives unbounded height; keep Step 2 visible
+      // with a minimum height so the child cannot collapse unexpectedly.
+      constraints: const BoxConstraints(minHeight: 560),
+      child: LocationStep(
+        isDarkMode: widget.isDarkMode,
+        routePoints: _routePoints,
+        onRoutePointsChanged: (points) {
+          setState(() {
+            _routePoints = points;
+          });
+        },
+        onContinue: () {
+          if (_routePoints.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Please create a route on the map first'),
+                backgroundColor: Colors.orange[700],
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              elevation: 8,
-            ),
-            child: const Text(
-              'Continue',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: () => setState(() => step = 1),
-          child: Text(
-            'Back',
-            style: TextStyle(
-              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(height: 100),
-      ],
+            );
+            return;
+          }
+          setState(() => step = 3);
+        },
+        onBack: () => setState(() => step = 1),
+      ),
     );
   }
 
@@ -815,11 +824,92 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildMediaOption(Icons.camera_alt, 'Take Photo')),
+            Expanded(
+              child: _buildMediaOption(
+                Icons.camera_alt,
+                'Take Photo',
+                onTap: () => _pickMedia(ImageSource.camera),
+              ),
+            ),
             const SizedBox(width: 16),
-            Expanded(child: _buildMediaOption(Icons.upload, 'Upload')),
+            Expanded(
+              child: _buildMediaOption(
+                Icons.upload,
+                'Upload',
+                onTap: () => _pickMedia(ImageSource.gallery),
+              ),
+            ),
           ],
         ),
+        if (_selectedMedia.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '${_selectedMedia.length} photo(s) selected',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 92,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _selectedMedia.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final media = _selectedMedia[index];
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        media.path,
+                        width: 92,
+                        height: 92,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 92,
+                          height: 92,
+                          color: widget.isDarkMode
+                              ? AppColors.mediumBlue
+                              : Colors.grey[200],
+                          child: const Icon(Icons.image_not_supported_outlined),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedMedia.removeAt(index);
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
         const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(16),
@@ -882,9 +972,13 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     );
   }
 
-  Widget _buildMediaOption(IconData icon, String label) {
+  Widget _buildMediaOption(
+    IconData icon,
+    String label, {
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
-      onTap: () {},
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(

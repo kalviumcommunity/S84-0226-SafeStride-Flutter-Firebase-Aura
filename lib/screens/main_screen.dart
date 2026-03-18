@@ -42,10 +42,7 @@ class _MainScreenState extends State<MainScreen> {
     Navigator.pushNamed(
       context,
       AppRoutes.routeDetail,
-      arguments: RouteDetailArguments(
-        route: route,
-        isDarkMode: _isDarkMode,
-      ),
+      arguments: RouteDetailArguments(route: route, isDarkMode: _isDarkMode),
     );
   }
 
@@ -105,12 +102,7 @@ class _MainScreenState extends State<MainScreen> {
                   end: Alignment.bottomCenter,
                 ),
         ),
-        child: Stack(
-          children: [
-            _renderScreen(),
-            _buildBottomNav(),
-          ],
-        ),
+        child: Stack(children: [_renderScreen(), _buildBottomNav()]),
       ),
     );
   }
@@ -163,8 +155,8 @@ class _MainScreenState extends State<MainScreen> {
         color: isActive
             ? AppColors.neonGreen
             : _isDarkMode
-                ? Colors.grey[400]
-                : Colors.grey[500],
+            ? Colors.grey[400]
+            : Colors.grey[500],
       ),
     );
   }

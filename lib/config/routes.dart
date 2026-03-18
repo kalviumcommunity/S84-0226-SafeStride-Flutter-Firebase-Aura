@@ -8,6 +8,7 @@ import '../screens/main_screen.dart';
 import '../screens/landing_page.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/signup_screen.dart';
+import '../screens/add_route_screen.dart';
 import '../services/routing_service.dart';
 
 /// Route names as constants for type safety and maintainability
@@ -84,6 +85,19 @@ class RouteGenerator {
           settings: settings,
         );
 
+      case AppRoutes.addRoute:
+        if (settings.arguments is ScreenArguments) {
+          final args = settings.arguments as ScreenArguments;
+          return MaterialPageRoute(
+            builder: (_) => AddRouteScreen(isDarkMode: args.isDarkMode),
+            settings: settings,
+          );
+        }
+        return MaterialPageRoute(
+          builder: (_) => const AddRouteScreen(isDarkMode: false),
+          settings: settings,
+        );
+
       case AppRoutes.routeDetail:
         // Extract arguments with type safety
         if (settings.arguments is RouteDetailArguments) {
@@ -116,10 +130,8 @@ class RouteGenerator {
           final userModel = args['userModel'] as UserModel;
           final isDarkMode = args['isDarkMode'] as bool;
           return MaterialPageRoute(
-            builder: (_) => EditProfileScreen(
-              userModel: userModel,
-              isDarkMode: isDarkMode,
-            ),
+            builder: (_) =>
+                EditProfileScreen(userModel: userModel, isDarkMode: isDarkMode),
             settings: settings,
           );
         }
