@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Autocomplete, GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { Autocomplete, GoogleMap, useJsApiLoader } from '@react-google-maps/api'
 import { Search } from 'lucide-react';
 import { FilterTabs } from '@/components/discover/FilterTabs';
 import { RouteCard } from '@/components/discover/RouteCard';
