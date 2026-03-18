@@ -34,9 +34,8 @@ class AppRoutes {
 /// Arguments class for type-safe argument passing
 class RouteDetailArguments {
   final RouteModel route;
-  final bool isDarkMode;
 
-  const RouteDetailArguments({required this.route, required this.isDarkMode});
+  const RouteDetailArguments({required this.route});
 }
 
 class ScreenArguments {
@@ -86,15 +85,8 @@ class RouteGenerator {
         );
 
       case AppRoutes.addRoute:
-        if (settings.arguments is ScreenArguments) {
-          final args = settings.arguments as ScreenArguments;
-          return MaterialPageRoute(
-            builder: (_) => AddRouteScreen(isDarkMode: args.isDarkMode),
-            settings: settings,
-          );
-        }
         return MaterialPageRoute(
-          builder: (_) => const AddRouteScreen(isDarkMode: false),
+          builder: (_) => const AddRouteScreen(),
           settings: settings,
         );
 
@@ -106,7 +98,6 @@ class RouteGenerator {
             builder: (context) => RouteDetailScreen(
               route: args.route,
               onBack: () => Navigator.of(context).pop(),
-              isDarkMode: args.isDarkMode,
             ),
             settings: settings,
           );
@@ -128,10 +119,9 @@ class RouteGenerator {
         if (settings.arguments is Map<String, dynamic>) {
           final args = settings.arguments as Map<String, dynamic>;
           final userModel = args['userModel'] as UserModel;
-          final isDarkMode = args['isDarkMode'] as bool;
           return MaterialPageRoute(
             builder: (_) =>
-                EditProfileScreen(userModel: userModel, isDarkMode: isDarkMode),
+                EditProfileScreen(userModel: userModel),
             settings: settings,
           );
         }

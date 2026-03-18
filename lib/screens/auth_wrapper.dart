@@ -1,18 +1,55 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../providers/theme_provider.dart';
+import '../providers/user_provider.dart';
 import 'landing_page.dart';
 import 'main_screen.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   final Stream<User?>? authStream;
 
   const AuthWrapper({super.key, this.authStream});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  StreamSubscription<User?>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAuthListener();
+  }
+
+  void _setupAuthListener() {
+    final stream = widget.authStream ?? AuthService().authStateChanges;
+    _authSub = stream.listen((user) {
+      if (!mounted) return;
+      if (user != null) {
+        context.read<ThemeProvider>().loadFromFirestore(user.uid);
+        context.read<UserProvider>().subscribe(user.uid);
+      } else {
+        context.read<ThemeProvider>().reset();
+        context.read<UserProvider>().clear();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: authStream ?? AuthService().authStateChanges,
+      stream: widget.authStream ?? AuthService().authStateChanges,
       builder: (context, snapshot) {
         // Show a brief loading indicator only on first connection.
         if (snapshot.connectionState == ConnectionState.waiting) {

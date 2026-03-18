@@ -4,11 +4,8 @@ import '../constants/mock_data.dart';
 import '../models/route_model.dart';
 
 class AlertsScreen extends StatelessWidget {
-  final bool isDarkMode;
-
   const AlertsScreen({
     super.key,
-    required this.isDarkMode,
   });
 
   IconData _getAlertIcon(String type) {
@@ -31,14 +28,14 @@ class AlertsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
+      backgroundColor: (Theme.of(context).brightness == Brightness.dark) ? AppColors.darkBlue : AppColors.lightBackground,
       body: Column(
         children: [
           // Header
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDarkMode
+                colors: (Theme.of(context).brightness == Brightness.dark)
                     ? [AppColors.lightBlue, Colors.transparent]
                     : [AppColors.lightBackground, Colors.transparent],
                 begin: Alignment.topCenter,
@@ -54,7 +51,7 @@ class AlertsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textDark,
+                    color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -62,7 +59,7 @@ class AlertsScreen extends StatelessWidget {
                   'Stay updated on route conditions',
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                    color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
               ],
@@ -73,11 +70,11 @@ class AlertsScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(
               children: [
-                Expanded(child: _buildStatCard(Icons.check_circle, '3', 'Updates', AppColors.neonGreen)),
+                Expanded(child: _buildStatCard(context, Icons.check_circle, '3', 'Updates', AppColors.neonGreen)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard(Icons.warning, '2', 'Warnings', AppColors.safetyMedium)),
+                Expanded(child: _buildStatCard(context, Icons.warning, '2', 'Warnings', AppColors.safetyMedium)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatCard(Icons.info, '1', 'Info', AppColors.skyBlue)),
+                Expanded(child: _buildStatCard(context, Icons.info, '1', 'Info', AppColors.skyBlue)),
               ],
             ),
           ),
@@ -96,7 +93,7 @@ class AlertsScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: isDarkMode ? Colors.white : AppColors.textDark,
+                        color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                       ),
                     ),
                   );
@@ -107,7 +104,7 @@ class AlertsScreen extends StatelessWidget {
                 }
                 
                 final alert = MockData.alerts[index - 1];
-                return _buildAlertCard(alert);
+                return _buildAlertCard(context, alert);
               },
             ),
           ),
@@ -116,15 +113,15 @@ class AlertsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(IconData icon, String value, String label, Color color) {
+  Widget _buildStatCard(BuildContext context, IconData icon, String value, String label, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.3 : 0.08),
+            color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.3 : 0.08),
             blurRadius: 10,
           ),
         ],
@@ -146,7 +143,7 @@ class AlertsScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 4),
@@ -154,7 +151,7 @@ class AlertsScreen extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ],
@@ -162,7 +159,7 @@ class AlertsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAlertCard(AlertModel alert) {
+  Widget _buildAlertCard(BuildContext context, AlertModel alert) {
     final alertColor = _getAlertColor(alert.color);
     final alertIcon = _getAlertIcon(alert.type);
 
@@ -170,11 +167,11 @@ class AlertsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDarkMode ? 0.2 : 0.08),
+            color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.2 : 0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -202,7 +199,7 @@ class AlertsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? Colors.white : AppColors.textDark,
+                    color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -210,7 +207,7 @@ class AlertsScreen extends StatelessWidget {
                   alert.message,
                   style: TextStyle(
                     fontSize: 14,
-                    color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                    color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[300] : Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -219,28 +216,28 @@ class AlertsScreen extends StatelessWidget {
                     Icon(
                       Icons.place,
                       size: 16,
-                      color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                      color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
                     ),
                     const SizedBox(width: 4),
                     Text(
                       alert.location,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                     const SizedBox(width: 16),
                     Icon(
                       Icons.access_time,
                       size: 16,
-                      color: isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                      color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
                     ),
                     const SizedBox(width: 4),
                     Text(
                       alert.time,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                        color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -250,7 +247,7 @@ class AlertsScreen extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right,
-            color: isDarkMode ? Colors.grey[600] : Colors.grey[400],
+            color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[600] : Colors.grey[400],
           ),
         ],
       ),

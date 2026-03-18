@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -32,12 +32,10 @@ const String _kDarkMapStyle = '''
 
 class MapScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
-  final bool isDarkMode;
 
   const MapScreen({
     super.key,
     required this.onRouteSelect,
-    required this.isDarkMode,
   });
 
   @override
@@ -242,12 +240,13 @@ class _MapScreenState extends State<MapScreen> {
       .toList();
 
   void _showFilterSheet() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: BoxDecoration(
-          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+          color: isDarkMode ? AppColors.mediumBlue : Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -260,14 +259,14 @@ class _MapScreenState extends State<MapScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: isDarkMode ? Colors.white : AppColors.textDark,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Advanced filters coming soon.',
               style: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom + 28),
@@ -279,6 +278,7 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final trails = _filteredTrails;
     return Scaffold(
       body: Stack(
@@ -293,7 +293,7 @@ class _MapScreenState extends State<MapScreen> {
             myLocationButtonEnabled: false,
             zoomControlsEnabled: false,
             mapType: MapType.normal,
-            style: widget.isDarkMode ? _kDarkMapStyle : null,
+            style: isDarkMode ? _kDarkMapStyle : null,
             padding: const EdgeInsets.only(top: 130, bottom: 260),
           ),
 
@@ -310,7 +310,7 @@ class _MapScreenState extends State<MapScreen> {
             left: 0,
             right: 0,
             child: _TopBar(
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: isDarkMode,
               mode: _mode,
               onModeChanged: _onModeChanged,
             ),
@@ -321,7 +321,7 @@ class _MapScreenState extends State<MapScreen> {
             right: 16,
             child: _MapFab(
               icon: Icons.my_location,
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: isDarkMode,
               onTap: _fetchLocation,
             ),
           ),
@@ -331,7 +331,7 @@ class _MapScreenState extends State<MapScreen> {
             right: 16,
             child: _MapFab(
               icon: Icons.tune,
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: isDarkMode,
               onTap: _showFilterSheet,
             ),
           ),
@@ -343,7 +343,7 @@ class _MapScreenState extends State<MapScreen> {
             child: _BottomPanel(
               trails: trails,
               selectedId: _selectedId,
-              isDarkMode: widget.isDarkMode,
+              isDarkMode: isDarkMode,
               cardScroll: _cardScroll,
               isLoading: _placesLoading,
               errorMessage: _placesError,
@@ -356,7 +356,6 @@ class _MapScreenState extends State<MapScreen> {
                   AppRoutes.routeDetail,
                   arguments: RouteDetailArguments(
                     route: model,
-                    isDarkMode: widget.isDarkMode,
                   ),
                 );
               },

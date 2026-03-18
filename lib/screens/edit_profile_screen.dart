@@ -7,12 +7,10 @@ import '../services/user_preferences_service.dart';
 /// Full-screen editor for the user's profile and personalization settings.
 class EditProfileScreen extends StatefulWidget {
   final UserModel userModel;
-  final bool isDarkMode;
 
   const EditProfileScreen({
     super.key,
     required this.userModel,
-    required this.isDarkMode,
   });
 
   @override
@@ -107,7 +105,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   // ── UI ────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final dark = widget.isDarkMode;
+    final dark = (Theme.of(context).brightness == Brightness.dark);
 
     return Scaffold(
       backgroundColor: dark ? AppColors.darkBlue : AppColors.lightBackground,

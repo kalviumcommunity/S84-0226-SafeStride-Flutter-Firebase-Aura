@@ -64,4 +64,33 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static ThemeData get lightTheme {
+    return ThemeData(
+      brightness: Brightness.light,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryGreen,
+        brightness: Brightness.light,
+      ),
+      scaffoldBackgroundColor: lightBackground,
+      useMaterial3: true,
+      fontFamily: 'Poppins',
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryGreen,
+        brightness: Brightness.dark,
+        background: darkBlue,
+        surface: mediumBlue,
+      ),
+      scaffoldBackgroundColor: darkBlue,
+      useMaterial3: true,
+      fontFamily: 'Poppins',
+    );
+  }
 }
+
