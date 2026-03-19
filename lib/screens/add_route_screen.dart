@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -45,49 +46,72 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   bool _isSaving = false;
 
+  String? _validateSubmissionData() {
+    final String routeName = _routeNameController.text.trim();
+    final String email = _emailController.text.trim();
+    final String distanceText = _distanceController.text.trim();
+
+    if (routeName.isEmpty) {
+      return 'Please enter a route name';
+    }
+    if (routeName.length < 3) {
+      return 'Route name must be at least 3 characters';
+    }
+
+    if (email.isEmpty) {
+      return 'Please enter your email';
+    }
+    final RegExp emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      return 'Please enter a valid email address';
+    }
+
+    if (routeType == null) {
+      return 'Please select a route type';
+    }
+
+    if (distanceText.isEmpty) {
+      return 'Please enter distance';
+    }
+    final double? distance = double.tryParse(distanceText);
+    if (distance == null) {
+      return 'Please enter a valid number for distance';
+    }
+    if (distance <= 0) {
+      return 'Distance must be greater than 0';
+    }
+    if (distance > 200) {
+      return 'Distance seems too large (max 200km)';
+    }
+
+    if (_routePoints.isEmpty) {
+      return 'Please create a route on the map first';
+    }
+
+    return null;
+  }
+
   void handleSubmit() {
-    if (_formKey.currentState?.validate() ?? false) {
-      if (routeType == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please select a route type'),
-            backgroundColor: Colors.red[700],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-        return;
-      }
+    final String? validationError = _validateSubmissionData();
+    debugPrint(
+      '[AddRouteScreen] Submit tapped | validationError=$validationError | '
+      'routeName="${_routeNameController.text.trim()}" | '
+      'email="${_emailController.text.trim()}" | '
+      'routeType=$routeType | '
+      'distance="${_distanceController.text.trim()}" | '
+      'points=${_routePoints.length} | media=${_selectedMedia.length}',
+    );
 
-      if (_routePoints.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Please create a route on the map first'),
-            backgroundColor: Colors.orange[700],
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-        return;
-      }
-
-      _formKey.currentState?.save();
-      _saveToFirestore();
-    } else {
-      // Show validation error
+    if (validationError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 12),
-              const Expanded(
+              const SizedBox(width: 10),
+              Expanded(
                 child: Text(
-                  'Please fix the errors before submitting',
+                  'Validation: $validationError',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
@@ -100,7 +124,10 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           ),
         ),
       );
+      return;
     }
+
+    _saveToFirestore();
   }
 
   Future<void> _saveToFirestore() async {
@@ -108,7 +135,31 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
       final routeId = '${uid}_${DateTime.now().millisecondsSinceEpoch}';
-      final photoUrls = await _uploadRoutePhotos(uid, routeId);
+      List<String> photoUrls = <String>[];
+
+      if (_selectedMedia.isNotEmpty) {
+        if (kIsWeb) {
+          debugPrint(
+            '[AddRouteScreen] Web detected: skipping Firebase Storage upload to avoid CORS failure. Route will be saved without photos.',
+          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                  'Photo upload is skipped on web (Firebase Storage CORS). Route will be saved without photos.',
+                ),
+                backgroundColor: Colors.orange[700],
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            );
+          }
+        } else {
+          photoUrls = await _uploadRoutePhotos(uid, routeId);
+        }
+      }
 
       await FirestoreService().addRoute(routeId, {
         'routeId': routeId,
@@ -441,16 +492,10 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   Widget _buildStepContent() {
     debugPrint('[AddRouteScreen] Rendering step $step');
-    switch (step) {
-      case 1:
-        return _buildStep1();
-      case 2:
-        return _buildStep2();
-      case 3:
-        return _buildStep3();
-      default:
-        return Container();
-    }
+    return IndexedStack(
+      index: (step - 1).clamp(0, 2),
+      children: [_buildStep1(), _buildStep2(), _buildStep3()],
+    );
   }
 
   Widget _buildStep1() {

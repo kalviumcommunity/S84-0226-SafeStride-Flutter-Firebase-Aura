@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:geolocator/geolocator.dart';
 
 import '../constants/app_colors.dart';
 
@@ -28,9 +31,15 @@ class _LocationStepState extends State<LocationStep> {
   static const LatLng _defaultCenter = LatLng(14.5995, 120.9842);
 
   GoogleMapController? _mapController;
+  final TextEditingController _searchController = TextEditingController();
   bool _mapVisible = false;
   bool _mapInitialized = false;
   bool _mapLoadTimedOut = false;
+  bool _isSearching = false;
+  bool _isLocating = false;
+  List<_PlaceSuggestion> _searchResults = <_PlaceSuggestion>[];
+  LatLng? _currentLocation;
+  DateTime? _suppressMapTapUntil;
   Timer? _mapLoadTimer;
 
   Set<Marker> get _markers {
@@ -42,8 +51,12 @@ class _LocationStepState extends State<LocationStep> {
       return Marker(
         markerId: MarkerId('route_point_$index'),
         position: point,
+        draggable: true,
+        onDragEnd: (LatLng updatedPosition) {
+          _updateRoutePoint(index, updatedPosition);
+        },
         infoWindow: InfoWindow(
-          title: isStart ? 'Start Point' : 'Route Point ${index + 1}',
+          title: isStart ? '📍 Start Point' : '📍 Route Point ${index + 1}',
         ),
       );
     }).toSet();
@@ -66,6 +79,11 @@ class _LocationStepState extends State<LocationStep> {
   }
 
   void _handleMapTap(LatLng point) {
+    final DateTime now = DateTime.now();
+    if (_suppressMapTapUntil != null && now.isBefore(_suppressMapTapUntil!)) {
+      return;
+    }
+
     debugPrint(
       '[LocationStep] Map tap captured at (${point.latitude}, ${point.longitude})',
     );
@@ -75,12 +93,14 @@ class _LocationStepState extends State<LocationStep> {
     widget.onRoutePointsChanged(updated);
   }
 
-  void _openMap() {
+  Future<void> _openMap() async {
     setState(() {
       _mapVisible = true;
       _mapLoadTimedOut = false;
       _mapInitialized = false;
     });
+
+    await _resolveCurrentLocation(moveCamera: true);
 
     _mapLoadTimer?.cancel();
     _mapLoadTimer = Timer(const Duration(seconds: 6), () {
@@ -93,7 +113,195 @@ class _LocationStepState extends State<LocationStep> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _fitCameraToRoute());
   }
 
+  Future<void> _resolveCurrentLocation({bool moveCamera = false}) async {
+    if (_isLocating) {
+      return;
+    }
+
+    setState(() {
+      _isLocating = true;
+    });
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      final LatLng liveLocation = LatLng(position.latitude, position.longitude);
+      setState(() {
+        _currentLocation = liveLocation;
+      });
+
+      if (moveCamera && _mapController != null && widget.routePoints.isEmpty) {
+        await _mapController!.animateCamera(
+          CameraUpdate.newLatLngZoom(liveLocation, 15),
+        );
+      }
+    } catch (_) {
+      // Graceful fallback to default center.
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocating = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _searchPlaces() async {
+    final String query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = <_PlaceSuggestion>[];
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final Uri uri = Uri.https(
+        'nominatim.openstreetmap.org',
+        '/search',
+        <String, String>{'q': query, 'format': 'jsonv2', 'limit': '5'},
+      );
+
+      final http.Response response = await http.get(
+        uri,
+        headers: const <String, String>{
+          'Accept': 'application/json',
+          'User-Agent': 'SafeStride Flutter App',
+        },
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode != 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Search failed. Please try again.'),
+            backgroundColor: Colors.red[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+
+      final dynamic decoded = jsonDecode(response.body);
+      if (decoded is! List<dynamic>) {
+        setState(() {
+          _searchResults = <_PlaceSuggestion>[];
+        });
+        return;
+      }
+
+      final List<_PlaceSuggestion> results = decoded
+          .map((dynamic item) => _PlaceSuggestion.fromJson(item))
+          .whereType<_PlaceSuggestion>()
+          .toList();
+
+      setState(() {
+        _searchResults = results;
+      });
+
+      if (results.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('No locations found for that search.'),
+            backgroundColor: Colors.orange[700],
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Could not search right now. Check your network.',
+          ),
+          backgroundColor: Colors.red[700],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _selectSearchResult(_PlaceSuggestion place) async {
+    await _openMap();
+
+    final LatLng selectedPoint = LatLng(place.latitude, place.longitude);
+    final List<LatLng> updatedRoute = List<LatLng>.from(widget.routePoints)
+      ..add(selectedPoint);
+
+    widget.onRoutePointsChanged(updatedRoute);
+
+    setState(() {
+      _searchController.text = place.title;
+      _searchResults = <_PlaceSuggestion>[];
+    });
+
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (_mapController != null) {
+      await _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(selectedPoint, 16),
+      );
+    }
+  }
+
+  void _updateRoutePoint(int index, LatLng newPosition) {
+    if (index < 0 || index >= widget.routePoints.length) {
+      return;
+    }
+
+    final List<LatLng> updated = List<LatLng>.from(widget.routePoints);
+    updated[index] = newPosition;
+    widget.onRoutePointsChanged(updated);
+  }
+
   void _undoLastPoint() {
+    _suppressMapTapUntil = DateTime.now().add(
+      const Duration(milliseconds: 450),
+    );
+
     if (widget.routePoints.isEmpty) {
       return;
     }
@@ -104,6 +312,10 @@ class _LocationStepState extends State<LocationStep> {
   }
 
   void _clearRoute() {
+    _suppressMapTapUntil = DateTime.now().add(
+      const Duration(milliseconds: 450),
+    );
+
     if (widget.routePoints.isEmpty) {
       return;
     }
@@ -146,6 +358,12 @@ class _LocationStepState extends State<LocationStep> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _resolveCurrentLocation();
+  }
+
+  @override
   void didUpdateWidget(covariant LocationStep oldWidget) {
     super.didUpdateWidget(oldWidget);
 
@@ -158,7 +376,7 @@ class _LocationStepState extends State<LocationStep> {
   @override
   void dispose() {
     _mapLoadTimer?.cancel();
-    _mapController?.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -213,6 +431,136 @@ class _LocationStepState extends State<LocationStep> {
                 ),
               ),
               const SizedBox(height: 16),
+              Text(
+                'Search a place, tap result to mark it, then drag 📍 markers to adjust',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: widget.isDarkMode
+                      ? Colors.grey.shade300
+                      : Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: (_) => _searchPlaces(),
+                      style: TextStyle(
+                        color: widget.isDarkMode
+                            ? Colors.white
+                            : AppColors.textDark,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search location',
+                        hintStyle: TextStyle(
+                          color: widget.isDarkMode
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
+                        ),
+                        filled: true,
+                        fillColor: widget.isDarkMode
+                            ? AppColors.darkBlue
+                            : AppColors.lightBackground,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    height: 44,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSearching ? null : _searchPlaces,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: _isSearching
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.search, size: 18),
+                      label: Text(_isSearching ? '...' : 'Mark'),
+                    ),
+                  ),
+                ],
+              ),
+              if (_searchResults.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  constraints: const BoxConstraints(maxHeight: 160),
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode
+                        ? AppColors.darkBlue
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: widget.isDarkMode
+                          ? AppColors.mediumBlue
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: _searchResults.length,
+                    separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      color: widget.isDarkMode
+                          ? AppColors.mediumBlue
+                          : Colors.grey.shade200,
+                    ),
+                    itemBuilder: (context, index) {
+                      final _PlaceSuggestion result = _searchResults[index];
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.place_outlined),
+                        title: Text(
+                          result.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: widget.isDarkMode
+                                ? Colors.white
+                                : AppColors.textDark,
+                          ),
+                        ),
+                        subtitle: Text(
+                          result.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: widget.isDarkMode
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade700,
+                          ),
+                        ),
+                        onTap: () => _selectSearchResult(result),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: _openMap,
                 style: ElevatedButton.styleFrom(
@@ -227,9 +575,9 @@ class _LocationStepState extends State<LocationStep> {
                   ),
                 ),
                 icon: const Icon(Icons.map_outlined),
-                label: const Text(
-                  'Open Map',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                label: Text(
+                  _isLocating ? 'Locating...' : 'Open Map',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
             ],
@@ -250,11 +598,12 @@ class _LocationStepState extends State<LocationStep> {
                         initialCameraPosition: CameraPosition(
                           target: hasRoute
                               ? widget.routePoints.last
-                              : _defaultCenter,
+                              : (_currentLocation ?? _defaultCenter),
                           zoom: hasRoute ? 15 : 12,
                         ),
                         markers: _markers,
                         polylines: _polylines,
+                        myLocationEnabled: true,
                         myLocationButtonEnabled: true,
                         zoomControlsEnabled: false,
                         compassEnabled: true,
@@ -290,13 +639,23 @@ class _LocationStepState extends State<LocationStep> {
                             _MapActionButton(
                               icon: Icons.undo,
                               label: 'Undo',
-                              onPressed: _undoLastPoint,
+                              onPressed: () {
+                                _suppressMapTapUntil = DateTime.now().add(
+                                  const Duration(milliseconds: 450),
+                                );
+                                _undoLastPoint();
+                              },
                             ),
                             const SizedBox(width: 8),
                             _MapActionButton(
                               icon: Icons.delete_outline,
                               label: 'Clear',
-                              onPressed: _clearRoute,
+                              onPressed: () {
+                                _suppressMapTapUntil = DateTime.now().add(
+                                  const Duration(milliseconds: 450),
+                                );
+                                _clearRoute();
+                              },
                             ),
                           ],
                         ),
@@ -333,57 +692,55 @@ class _LocationStepState extends State<LocationStep> {
           ),
         ),
         const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: Stack(
-            children: [
-              ElevatedButton(
-                onPressed: hasRoute ? widget.onContinue : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.neonGreen,
-                  foregroundColor: AppColors.textDark,
-                  disabledBackgroundColor: AppColors.neonGreen.withValues(
-                    alpha: 0.45,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final double targetWidth = constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : MediaQuery.of(context).size.width;
+
+            return SizedBox(
+              width: targetWidth,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 62),
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (!hasRoute) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            'Please create a route on the map before continuing.',
+                          ),
+                          backgroundColor: Colors.orange[700],
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+
+                    widget.onContinue();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasRoute
+                        ? AppColors.neonGreen
+                        : AppColors.neonGreen.withValues(alpha: 0.45),
+                    foregroundColor: AppColors.textDark,
+                    minimumSize: const Size(double.infinity, 62),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 6,
                   ),
-                  disabledForegroundColor: AppColors.textDark.withValues(
-                    alpha: 0.8,
+                  child: const Text(
+                    'Continue',
+                    style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 6,
-                ),
-                child: const Text(
-                  'Continue',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
                 ),
               ),
-              if (!hasRoute)
-                Positioned.fill(
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(14),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text(
-                              'Please create a route on the map before continuing.',
-                            ),
-                            backgroundColor: Colors.orange[700],
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 8),
         TextButton(
@@ -430,6 +787,58 @@ class _MapActionButton extends StatelessWidget {
         label,
         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
+    );
+  }
+}
+
+class _PlaceSuggestion {
+  final String title;
+  final String subtitle;
+  final double latitude;
+  final double longitude;
+
+  const _PlaceSuggestion({
+    required this.title,
+    required this.subtitle,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  static _PlaceSuggestion? fromJson(dynamic json) {
+    if (json is! Map<String, dynamic>) {
+      return null;
+    }
+
+    final String? latRaw = json['lat'] as String?;
+    final String? lonRaw = json['lon'] as String?;
+    final String? displayName = json['display_name'] as String?;
+
+    if (latRaw == null || lonRaw == null || displayName == null) {
+      return null;
+    }
+
+    final double? lat = double.tryParse(latRaw);
+    final double? lon = double.tryParse(lonRaw);
+    if (lat == null || lon == null) {
+      return null;
+    }
+
+    final List<String> parts = displayName
+        .split(',')
+        .map((String part) => part.trim())
+        .where((String part) => part.isNotEmpty)
+        .toList();
+
+    final String title = parts.isNotEmpty ? parts.first : displayName;
+    final String subtitle = parts.length > 1
+        ? parts.sublist(1).take(3).join(', ')
+        : 'Location result';
+
+    return _PlaceSuggestion(
+      title: title,
+      subtitle: subtitle,
+      latitude: lat,
+      longitude: lon,
     );
   }
 }
