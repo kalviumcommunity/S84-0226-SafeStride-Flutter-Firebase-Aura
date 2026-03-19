@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/place.dart';
@@ -31,6 +32,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   int _minSafetyFilter = 0; // 0 means no filter
   bool isGridView = false; // Toggle between List and Grid view
   final TextEditingController _searchController = TextEditingController();
+  String? _currentUserId;
 
   // ── Nearby trails state ─────────────────────────────────────────────────────
   List<Place> _nearbyTrails = const [];
@@ -46,6 +48,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   void initState() {
     super.initState();
+    _currentUserId = FirebaseAuth.instance.currentUser?.uid;
     _fetchNearbyTrails();
     _loadFeaturedRoutesFromCurrentLocation();
   }
@@ -247,6 +250,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     {'id': 'safe', 'name': 'Safest', 'icon': Icons.shield},
     {'id': 'top', 'name': 'Top Rated', 'icon': Icons.emoji_events},
     {'id': 'nearby', 'name': 'Nearby', 'icon': Icons.near_me},
+    {
+      'id': 'your_routes',
+      'name': 'Your Routes',
+      'icon': Icons.my_library_books,
+    },
   ];
 
   List<RouteModel> get filteredRoutes {
@@ -635,6 +643,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
   // ListView.builder implementation
   Widget _buildListView() {
+    // When "Your Routes" is selected, show ONLY user routes section
+    if (selectedCategory == 'your_routes') {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [_buildUserRoutesSection(), const SizedBox(height: 100)],
+        ),
+      );
+    }
+
+    // For other categories, show normal featured routes flow
     final routes = filteredRoutes;
 
     if (routes.isEmpty) {
@@ -1248,8 +1267,287 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
+  /// Display user's own submitted routes filtered from Firestore
+  Widget _buildUserRoutesSection() {
+    if (_currentUserId == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 28),
+          Text(
+            'Your Routes',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.lock_outline,
+                  color: widget.isDarkMode
+                      ? AppColors.neonGreen
+                      : AppColors.primaryBlue,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Sign in to view your routes',
+                    style: TextStyle(
+                      color: widget.isDarkMode
+                          ? Colors.grey[300]
+                          : AppColors.textDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 28),
+        Text(
+          'Your Routes',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Routes you have submitted',
+          style: TextStyle(
+            fontSize: 13,
+            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirestoreService().getRoutesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Could not load your routes.',
+                  style: TextStyle(
+                    color: widget.isDarkMode
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
+                  ),
+                ),
+              );
+            }
+
+            final allDocs = snapshot.data?.docs ?? [];
+            final userDocs = allDocs.where((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return data['submittedBy'] == _currentUserId;
+            }).toList();
+
+            if (userDocs.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode
+                        ? AppColors.mediumBlue
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.add_road,
+                        color: widget.isDarkMode
+                            ? AppColors.neonGreen
+                            : AppColors.primaryBlue,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'No routes yet. Create one to see it here!',
+                          style: TextStyle(
+                            color: widget.isDarkMode
+                                ? Colors.grey[300]
+                                : AppColors.textDark,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return Column(
+              children: userDocs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return _buildUserRouteCard(data);
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserRouteCard(Map<String, dynamic> data) {
+    final name = data['name'] as String? ?? 'Unnamed Route';
+    final category = data['category'] as String? ?? '—';
+    final distance = data['distance'] as String? ?? '—';
+    final description = data['description'] as String? ?? '';
+    final safety = (data['safety'] as num?)?.toInt() ?? 75;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: widget.isDarkMode
+                            ? Colors.white
+                            : AppColors.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          distance,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isDarkMode
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode
+                                ? AppColors.lightBlue
+                                : const Color(0xFFDBEAFE),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: widget.isDarkMode
+                                  ? AppColors.neonGreen
+                                  : AppColors.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: AppColors.neonGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$safety%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textDark,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (description.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   // GridView.builder implementation
   Widget _buildGridView() {
+    // When "Your Routes" is selected, show ONLY user routes section
+    if (selectedCategory == 'your_routes') {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          children: [_buildUserRoutesSection(), const SizedBox(height: 100)],
+        ),
+      );
+    }
+
     final routes = filteredRoutes;
     return CustomScrollView(
       slivers: [
