@@ -15,12 +15,10 @@ import '../services/discovery_engine.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final Function(RouteModel) onRouteSelect;
-  final bool isDarkMode;
 
   const DiscoverScreen({
     super.key,
     required this.onRouteSelect,
-    required this.isDarkMode,
   });
 
   @override
@@ -297,7 +295,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   color: isActive
                       ? Colors.white
-                      : (widget.isDarkMode ? Colors.grey[400] : Colors.grey[700]),
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
                 ),
               ),
               selected: isActive,
@@ -307,7 +305,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 }
               },
               selectedColor: AppColors.skyBlue,
-              backgroundColor: widget.isDarkMode
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
                   ? AppColors.mediumBlue
                   : Colors.grey[200],
               shape: RoundedRectangleBorder(
@@ -315,7 +313,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 side: BorderSide(
                   color: isActive
                       ? AppColors.skyBlue
-                      : (widget.isDarkMode ? Colors.transparent : Colors.grey[300]!),
+                      : (Theme.of(context).brightness == Brightness.dark ? Colors.transparent : Colors.grey[300]!),
                 ),
               ),
               showCheckmark: false,
@@ -329,7 +327,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: widget.isDarkMode
+      backgroundColor: (Theme.of(context).brightness == Brightness.dark)
           ? AppColors.darkBlue
           : AppColors.lightBackground,
       body: Column(
@@ -338,7 +336,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: widget.isDarkMode
+                colors: (Theme.of(context).brightness == Brightness.dark)
                     ? [AppColors.lightBlue, Colors.transparent]
                     : [AppColors.lightBackground, Colors.transparent],
                 begin: Alignment.topCenter,
@@ -362,7 +360,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.white
                             : AppColors.textDark,
                       ),
@@ -374,7 +372,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? AppColors.mediumBlue
                               : Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -387,7 +385,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ),
                         child: Icon(
                           isGridView ? Icons.list : Icons.grid_view,
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? AppColors.neonGreen
                               : AppColors.primaryBlue,
                           size: 20,
@@ -401,7 +399,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   'Find your perfect route',
                   style: TextStyle(
                     fontSize: 14,
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.grey[400]
                         : Colors.grey[600],
                   ),
@@ -414,7 +412,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? AppColors.mediumBlue
                         : Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -429,7 +427,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     children: [
                       Icon(
                         Icons.search,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.grey[400]
                             : Colors.grey[500],
                         size: 20,
@@ -442,14 +440,14 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               setState(() => searchQuery = value),
                           onSubmitted: _searchByLocation,
                           style: TextStyle(
-                            color: widget.isDarkMode
+                            color: (Theme.of(context).brightness == Brightness.dark)
                                 ? Colors.white
                                 : AppColors.textDark,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Search routes...',
                             hintStyle: TextStyle(
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.grey[500]
                                   : Colors.grey[400],
                             ),
@@ -470,7 +468,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               _searchByLocation(_searchController.text),
                           child: Icon(
                             Icons.near_me,
-                            color: widget.isDarkMode
+                            color: (Theme.of(context).brightness == Brightness.dark)
                                 ? Colors.grey[400]
                                 : Colors.grey[500],
                             size: 18,
@@ -506,7 +504,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         gradient: isActive ? AppColors.neonGradient : null,
                         color: isActive
                             ? null
-                            : widget.isDarkMode
+                            : (Theme.of(context).brightness == Brightness.dark)
                             ? AppColors.mediumBlue
                             : Colors.white,
                         borderRadius: BorderRadius.circular(16),
@@ -531,7 +529,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             size: 16,
                             color: isActive
                                 ? AppColors.textDark
-                                : widget.isDarkMode
+                                : (Theme.of(context).brightness == Brightness.dark)
                                 ? Colors.grey[400]
                                 : Colors.grey[600],
                           ),
@@ -543,7 +541,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               fontWeight: FontWeight.w600,
                               color: isActive
                                   ? AppColors.textDark
-                                  : widget.isDarkMode
+                                  : (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                             ),
@@ -577,7 +575,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.mediumBlue.withOpacity(0.5)
                     : Colors.grey[100],
                 shape: BoxShape.circle,
@@ -585,7 +583,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Icon(
                 Icons.search_off_rounded,
                 size: 64,
-                color: widget.isDarkMode ? Colors.grey[600] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[600] : Colors.grey[400],
               ),
             ),
             const SizedBox(height: 24),
@@ -594,7 +592,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
               ),
             ),
             const SizedBox(height: 12),
@@ -603,7 +601,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
             const SizedBox(height: 32),
@@ -660,7 +658,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
               ),
             ),
           );
@@ -702,7 +700,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
               ),
             ),
             GestureDetector(
@@ -711,7 +709,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: widget.isDarkMode
+                  color: (Theme.of(context).brightness == Brightness.dark)
                       ? AppColors.mediumBlue
                       : Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -727,7 +725,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         padding: const EdgeInsets.all(8),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? AppColors.neonGreen
                               : AppColors.primaryBlue,
                         ),
@@ -735,7 +733,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     : Icon(
                         Icons.refresh_rounded,
                         size: 18,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? AppColors.neonGreen
                             : AppColors.primaryBlue,
                       ),
@@ -748,7 +746,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           'Parks and trails within 10 km of you',
           style: TextStyle(
             fontSize: 13,
-            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
         const SizedBox(height: 16),
@@ -759,7 +757,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             padding: const EdgeInsets.symmetric(vertical: 32),
             child: Center(
               child: CircularProgressIndicator(
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.neonGreen
                     : AppColors.primaryBlue,
               ),
@@ -770,7 +768,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -783,7 +781,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               children: [
                 Icon(
                   Icons.location_off_outlined,
-                  color: widget.isDarkMode
+                  color: (Theme.of(context).brightness == Brightness.dark)
                       ? Colors.grey[400]
                       : Colors.grey[500],
                 ),
@@ -793,7 +791,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     _trailsError!,
                     style: TextStyle(
                       fontSize: 13,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.grey[300]
                           : AppColors.textDark,
                     ),
@@ -807,7 +805,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+              color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -820,7 +818,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               children: [
                 Icon(
                   Icons.forest_outlined,
-                  color: widget.isDarkMode
+                  color: (Theme.of(context).brightness == Brightness.dark)
                       ? AppColors.neonGreen
                       : AppColors.primaryBlue,
                 ),
@@ -828,7 +826,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 Text(
                   'No nearby trails found.',
                   style: TextStyle(
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.grey[300]
                         : AppColors.textDark,
                   ),
@@ -852,11 +850,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(widget.isDarkMode ? 0.25 : 0.07),
+            color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.25 : 0.07),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -873,7 +871,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 left: Radius.circular(20),
               ),
               gradient: LinearGradient(
-                colors: widget.isDarkMode
+                colors: (Theme.of(context).brightness == Brightness.dark)
                     ? [AppColors.lightBlue, AppColors.mediumBlue]
                     : [AppColors.lightBackground, Colors.white],
                 begin: Alignment.topLeft,
@@ -884,7 +882,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Icon(
                 Icons.park_outlined,
                 size: 36,
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.neonGreen
                     : AppColors.primaryBlue,
               ),
@@ -906,7 +904,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.white
                           : AppColors.textDark,
                     ),
@@ -919,7 +917,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         Icon(
                           Icons.location_on_outlined,
                           size: 13,
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? Colors.grey[400]
                               : Colors.grey[500],
                         ),
@@ -931,7 +929,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                             ),
@@ -946,7 +944,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       Icon(
                         Icons.my_location,
                         size: 12,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.grey[500]
                             : Colors.grey[400],
                       ),
@@ -956,7 +954,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         '${place.longitude.toStringAsFixed(4)}',
                         style: TextStyle(
                           fontSize: 11,
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? Colors.grey[500]
                               : Colors.grey[400],
                         ),
@@ -978,7 +976,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? AppColors.neonGreen.withOpacity(0.15)
                           : AppColors.neonGreen.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
@@ -997,7 +995,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: widget.isDarkMode
+                            color: (Theme.of(context).brightness == Brightness.dark)
                                 ? AppColors.neonGreen
                                 : AppColors.primaryBlue,
                           ),
@@ -1007,7 +1005,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   )
                 : Icon(
                     Icons.chevron_right_rounded,
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.grey[600]
                         : Colors.grey[400],
                   ),
@@ -1027,7 +1025,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+            color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
           ),
         ),
         const SizedBox(height: 4),
@@ -1035,7 +1033,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           'Routes submitted by the SafeStride community',
           style: TextStyle(
             fontSize: 13,
-            color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+            color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
         const SizedBox(height: 16),
@@ -1054,7 +1052,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 child: Text(
                   'Could not load community routes.',
                   style: TextStyle(
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.grey[400]
                         : Colors.grey[600],
                   ),
@@ -1068,7 +1066,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? AppColors.mediumBlue
                         : Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -1083,7 +1081,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     children: [
                       Icon(
                         Icons.add_road,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? AppColors.neonGreen
                             : AppColors.primaryBlue,
                       ),
@@ -1092,7 +1090,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         child: Text(
                           'No community routes yet. Be the first to add one!',
                           style: TextStyle(
-                            color: widget.isDarkMode
+                            color: (Theme.of(context).brightness == Brightness.dark)
                                 ? Colors.grey[300]
                                 : AppColors.textDark,
                           ),
@@ -1126,11 +1124,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+        color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(widget.isDarkMode ? 0.2 : 0.06),
+            color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.2 : 0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -1143,7 +1141,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             height: 48,
             decoration: BoxDecoration(
               color:
-                  (widget.isDarkMode
+                  ((Theme.of(context).brightness == Brightness.dark)
                           ? AppColors.neonGreen
                           : AppColors.primaryBlue)
                       .withOpacity(0.12),
@@ -1166,7 +1164,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.white
                         : AppColors.textDark,
                   ),
@@ -1177,7 +1175,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     Icon(
                       Icons.straighten,
                       size: 13,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.grey[400]
                           : Colors.grey[600],
                     ),
@@ -1186,7 +1184,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       distance,
                       style: TextStyle(
                         fontSize: 12,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.grey[400]
                             : Colors.grey[600],
                       ),
@@ -1195,7 +1193,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     Icon(
                       Icons.directions,
                       size: 13,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.grey[400]
                           : Colors.grey[600],
                     ),
@@ -1204,7 +1202,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       category,
                       style: TextStyle(
                         fontSize: 12,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.grey[400]
                             : Colors.grey[600],
                       ),
@@ -1219,7 +1217,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 12,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.grey[500]
                           : Colors.grey[500],
                     ),
@@ -1239,7 +1237,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.neonGreen
                     : AppColors.primaryBlue,
               ),
@@ -1265,7 +1263,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                  color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                 ),
               ),
             ),
@@ -1300,17 +1298,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           AppRoutes.routeDetail,
           arguments: RouteDetailArguments(
             route: route,
-            isDarkMode: widget.isDarkMode,
           ),
         );
       },
       child: Container(
         decoration: BoxDecoration(
-          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+          color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(widget.isDarkMode ? 0.3 : 0.08),
+              color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.3 : 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -1384,7 +1381,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: widget.isDarkMode
+                        color: (Theme.of(context).brightness == Brightness.dark)
                             ? Colors.white
                             : AppColors.textDark,
                       ),
@@ -1398,7 +1395,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           route.distance,
                           style: TextStyle(
                             fontSize: 12,
-                            color: widget.isDarkMode
+                            color: (Theme.of(context).brightness == Brightness.dark)
                                 ? Colors.grey[400]
                                 : Colors.grey[600],
                           ),
@@ -1417,7 +1414,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: widget.isDarkMode
+                                color: (Theme.of(context).brightness == Brightness.dark)
                                     ? Colors.white
                                     : AppColors.textDark,
                               ),
@@ -1444,18 +1441,17 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           AppRoutes.routeDetail,
           arguments: RouteDetailArguments(
             route: route,
-            isDarkMode: widget.isDarkMode,
           ),
         );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+          color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(widget.isDarkMode ? 0.3 : 0.08),
+              color: Colors.black.withOpacity((Theme.of(context).brightness == Brightness.dark) ? 0.3 : 0.08),
               blurRadius: 24,
               offset: const Offset(0, 8),
             ),
@@ -1580,7 +1576,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: widget.isDarkMode
+                      color: (Theme.of(context).brightness == Brightness.dark)
                           ? Colors.white
                           : AppColors.textDark,
                     ),
@@ -1595,7 +1591,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             route.distance,
                             style: TextStyle(
                               fontSize: 14,
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                             ),
@@ -1607,7 +1603,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? AppColors.lightBlue
                                   : const Color(0xFFDBEAFE),
                               borderRadius: BorderRadius.circular(8),
@@ -1617,7 +1613,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: widget.isDarkMode
+                                color: (Theme.of(context).brightness == Brightness.dark)
                                     ? Colors.grey[300]
                                     : AppColors.primaryBlue,
                               ),
@@ -1637,7 +1633,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             route.rating.toString(),
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.white
                                   : AppColors.textDark,
                             ),
@@ -1647,7 +1643,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             '(${route.reviews})',
                             style: TextStyle(
                               fontSize: 14,
-                              color: widget.isDarkMode
+                              color: (Theme.of(context).brightness == Brightness.dark)
                                   ? Colors.grey[400]
                                   : Colors.grey[600],
                             ),

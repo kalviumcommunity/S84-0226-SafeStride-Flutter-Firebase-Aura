@@ -8,9 +8,7 @@ import '../services/firestore_service.dart';
 import '../widgets/location_step.dart';
 
 class AddRouteScreen extends StatefulWidget {
-  final bool isDarkMode;
-
-  const AddRouteScreen({super.key, required this.isDarkMode});
+  const AddRouteScreen({super.key});
 
   @override
   State<AddRouteScreen> createState() => _AddRouteScreenState();
@@ -142,7 +140,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               ),
             ],
           ),
-          backgroundColor: widget.isDarkMode
+          backgroundColor: (Theme.of(context).brightness == Brightness.dark)
               ? AppColors.mediumBlue
               : AppColors.primaryBlue,
           behavior: SnackBarBehavior.floating,
@@ -229,7 +227,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   Widget build(BuildContext context) {
     if (step == 4) {
       return Scaffold(
-        backgroundColor: widget.isDarkMode
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark)
             ? AppColors.darkBlue
             : AppColors.lightBackground,
         body: Center(
@@ -262,7 +260,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                  color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -270,7 +268,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 'Your route has been successfully submitted for review.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: widget.isDarkMode
+                  color: (Theme.of(context).brightness == Brightness.dark)
                       ? Colors.grey[400]
                       : Colors.grey[600],
                 ),
@@ -282,7 +280,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
     }
 
     return Scaffold(
-      backgroundColor: widget.isDarkMode
+      backgroundColor: (Theme.of(context).brightness == Brightness.dark)
           ? AppColors.darkBlue
           : AppColors.lightBackground,
       body: Column(
@@ -291,7 +289,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: widget.isDarkMode
+                colors: (Theme.of(context).brightness == Brightness.dark)
                     ? [AppColors.lightBlue, Colors.transparent]
                     : [AppColors.lightBackground, Colors.transparent],
                 begin: Alignment.topCenter,
@@ -312,7 +310,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.white
                         : AppColors.textDark,
                   ),
@@ -322,7 +320,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   'Share your favorite route with the community',
                   style: TextStyle(
                     fontSize: 14,
-                    color: widget.isDarkMode
+                    color: (Theme.of(context).brightness == Brightness.dark)
                         ? Colors.grey[400]
                         : Colors.grey[600],
                   ),
@@ -350,7 +348,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                                   : null,
                               color: step > i
                                   ? null
-                                  : widget.isDarkMode
+                                  : (Theme.of(context).brightness == Brightness.dark)
                                   ? AppColors.mediumBlue
                                   : Colors.grey[200],
                               borderRadius: BorderRadius.circular(2),
@@ -393,7 +391,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         gradient: step >= stepNum ? AppColors.neonGradient : null,
         color: step >= stepNum
             ? null
-            : widget.isDarkMode
+            : (Theme.of(context).brightness == Brightness.dark)
             ? AppColors.mediumBlue
             : Colors.grey[200],
         shape: BoxShape.circle,
@@ -414,7 +412,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             fontWeight: FontWeight.bold,
             color: step >= stepNum
                 ? AppColors.textDark
-                : widget.isDarkMode
+                : (Theme.of(context).brightness == Brightness.dark)
                 ? Colors.grey[500]
                 : Colors.grey[400],
           ),
@@ -429,10 +427,10 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       style: TextStyle(
         fontSize: 12,
         color: step >= stepNum
-            ? widget.isDarkMode
+            ? (Theme.of(context).brightness == Brightness.dark)
                   ? AppColors.neonGreen
                   : AppColors.primaryBlue
-            : widget.isDarkMode
+            : (Theme.of(context).brightness == Brightness.dark)
             ? Colors.grey[500]
             : Colors.grey[400],
       ),
@@ -464,22 +462,22 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _routeNameController,
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'Enter route name',
               hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode
+              fillColor: (Theme.of(context).brightness == Brightness.dark)
                   ? AppColors.mediumBlue
                   : Colors.white,
               border: OutlineInputBorder(
@@ -512,7 +510,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -520,15 +518,15 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'example@email.com',
               hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode
+              fillColor: (Theme.of(context).brightness == Brightness.dark)
                   ? AppColors.mediumBlue
                   : Colors.white,
               border: OutlineInputBorder(
@@ -563,7 +561,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 12),
@@ -590,7 +588,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -598,15 +596,15 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _distanceController,
             keyboardType: TextInputType.number,
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: '0.0',
               hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode
+              fillColor: (Theme.of(context).brightness == Brightness.dark)
                   ? AppColors.mediumBlue
                   : Colors.white,
               border: OutlineInputBorder(
@@ -646,7 +644,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -654,15 +652,15 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _descriptionController,
             maxLines: 3,
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'Describe your route...',
               hintStyle: TextStyle(
-                color: widget.isDarkMode ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
               ),
               filled: true,
-              fillColor: widget.isDarkMode
+              fillColor: (Theme.of(context).brightness == Brightness.dark)
                   ? AppColors.mediumBlue
                   : Colors.white,
               border: OutlineInputBorder(
@@ -728,7 +726,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           gradient: isSelected ? AppColors.neonGradient : null,
           color: isSelected
               ? null
-              : widget.isDarkMode
+              : (Theme.of(context).brightness == Brightness.dark)
               ? AppColors.mediumBlue
               : Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -757,7 +755,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 fontWeight: FontWeight.w600,
                 color: isSelected
                     ? AppColors.textDark
-                    : widget.isDarkMode
+                    : (Theme.of(context).brightness == Brightness.dark)
                     ? Colors.grey[400]
                     : Colors.grey[600],
               ),
@@ -791,7 +789,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       // with a minimum height so the child cannot collapse unexpectedly.
       constraints: const BoxConstraints(minHeight: 560),
       child: LocationStep(
-        isDarkMode: widget.isDarkMode,
+        isDarkMode: (Theme.of(context).brightness == Brightness.dark),
         routePoints: _routePoints,
         onRoutePointsChanged: (points) {
           setState(() {
@@ -849,7 +847,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               '${_selectedMedia.length} photo(s) selected',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
               ),
             ),
           ),
@@ -874,7 +872,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                         errorBuilder: (_, __, ___) => Container(
                           width: 92,
                           height: 92,
-                          color: widget.isDarkMode
+                          color: (Theme.of(context).brightness == Brightness.dark)
                               ? AppColors.mediumBlue
                               : Colors.grey[200],
                           child: const Icon(Icons.image_not_supported_outlined),
@@ -914,7 +912,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: widget.isDarkMode
+            color: (Theme.of(context).brightness == Brightness.dark)
                 ? AppColors.mediumBlue
                 : const Color(0xFFDBEAFE),
             borderRadius: BorderRadius.circular(16),
@@ -923,7 +921,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             '💡 Tip: Adding photos helps others discover your route!',
             style: TextStyle(
               fontSize: 14,
-              color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[700],
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[300] : Colors.grey[700],
             ),
           ),
         ),
@@ -962,7 +960,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           child: Text(
             'Back',
             style: TextStyle(
-              color: widget.isDarkMode ? Colors.grey[400] : Colors.grey[600],
+              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -982,7 +980,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: widget.isDarkMode ? AppColors.mediumBlue : Colors.white,
+          color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
@@ -994,7 +992,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.lightBlue
                     : const Color(0xFFDBEAFE),
                 shape: BoxShape.circle,
@@ -1002,7 +1000,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               child: Icon(
                 icon,
                 size: 32,
-                color: widget.isDarkMode
+                color: (Theme.of(context).brightness == Brightness.dark)
                     ? AppColors.neonGreen
                     : AppColors.primaryBlue,
               ),
@@ -1012,7 +1010,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: widget.isDarkMode ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
               ),
             ),
           ],
