@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../constants/app_colors.dart';
-import '../constants/mock_data.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/user_preferences_service.dart';
-import 'package:provider/provider.dart';
-import '../providers/theme_provider.dart';
-import '../providers/user_provider.dart';
 import 'edit_profile_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/route_model.dart';
 
 /// Profile tab — streams the user's Firestore profile in real time and renders
 /// stats, settings, and saved routes.
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool isDarkMode;
+  final VoidCallback onToggleDarkMode;
+
+  const ProfileScreen({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleDarkMode,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -24,303 +29,222 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = context.watch<ThemeProvider>();
-    final userProvider = context.watch<UserProvider>();
-    final isDarkMode = themeProvider.isDark;
-
-    if (!userProvider.isLoaded) {
-      return Scaffold(
-        backgroundColor: isDarkMode ? AppColors.darkBlue : AppColors.lightBackground,
-        body: const Center(child: CircularProgressIndicator()),
-      );
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      return const Scaffold(body: Center(child: Text('Not signed in')));
     }
 
-    final user = userProvider.user!;
+    return StreamBuilder<UserModel?>(
+      stream: _prefsSvc.userStream(firebaseUser.uid),
+      builder: (context, snapshot) {
+        // While loading, show a skeleton-ish progress indicator.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            backgroundColor: widget.isDarkMode
+                ? AppColors.darkBlue
+                : AppColors.lightBackground,
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return _buildBody(context, user, isDarkMode);
+        // Build a UserModel — either from Firestore or a sensible default.
+        final userModel = snapshot.data ??
+            UserModel(
+              uid: firebaseUser.uid,
+              email: firebaseUser.email ?? '',
+              displayName: firebaseUser.displayName ?? 'SafeStride User',
+            );
+
+        return _buildBody(context, userModel);
+      },
+    );
   }
 
   // ── Main Body ────────────────────────────────────────────────────────────
-  Widget _buildBody(BuildContext context, UserModel user, bool isDarkMode) {
-    final dark = isDarkMode;
-    final displayName =
-        user.displayName.isNotEmpty ? user.displayName : 'SafeStride User';
-    final bio = user.bio.isNotEmpty ? user.bio : 'No bio yet';
+  Widget _buildBody(BuildContext context, UserModel user) {
+    final dark = widget.isDarkMode;
     final activityLabel =
         user.activityType == 'cyclist' ? '🚴 Cyclist' : '🏃 Runner';
 
     return Scaffold(
       backgroundColor: dark ? AppColors.darkBlue : AppColors.lightBackground,
-      body: Column(
-        children: [
-          // ── Header with Gradient ──
-          Container(
-            height: 290,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primaryBlue,
-                  AppColors.skyBlue,
-                  AppColors.neonGreen,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      body: CustomScrollView(
+        slivers: [
+          // ── Premium Sliver Header ──
+          _buildSliverHeader(context, user, activityLabel, dark),
+
+          // ── Stats Cards Row ──
+          SliverToBoxAdapter(
+            child: Transform.translate(
+              offset: const Offset(0, -48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                        child: _buildStatCard(
+                            Icons.map, '${user.savedRoutesCount}', 'Saved Routes', dark)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: _buildStatCard(
+                            Icons.star, '${user.reviewsCount}', 'Reviews', dark)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                        child: _buildStatCard(
+                            Icons.favorite, '${user.favoritesCount}', 'Favorites', dark)),
+                  ],
+                ),
               ),
             ),
-            child: Column(
-              children: [
-                const SizedBox(height: 56),
-                // Settings / Edit button
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Activity badge
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          activityLabel,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 13),
-                        ),
-                      ),
-                      // Edit profile icon
-                      GestureDetector(
-                        onTap: () => _openEditProfile(user),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.edit,
-                              color: Colors.white, size: 20),
-                        ),
-                      ),
-                    ],
-                  ),
+          ),
+
+          // ── Settings Section ──
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: dark ? Colors.white : AppColors.textDark,
                 ),
-                const SizedBox(height: 16),
-                // Profile Avatar
-                Stack(
-                  children: [
-                    Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 20,
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: Container(
-                          color: AppColors.skyBlue,
-                          child: const Icon(Icons.person,
-                              size: 48, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: AppColors.neonGreen,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                        ),
-                        child: const Icon(Icons.emoji_events,
-                            size: 16, color: AppColors.textDark),
-                      ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: dark ? AppColors.mediumBlue : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(dark ? 0.3 : 0.05),
+                      blurRadius: 10,
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                child: Column(
+                  children: [
+                    _buildSettingItem(
+                      icon: Icons.edit,
+                      title: 'Edit Profile',
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _openEditProfile(user),
+                      dark: dark,
+                    ),
+                    _buildDivider(dark),
+                    _buildSettingItem(
+                      icon: Icons.logout,
+                      title: 'Sign Out',
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await AuthService().logout();
+                      },
+                      dark: dark,
+                    ),
+                    _buildDivider(dark),
+                    _buildSettingItem(
+                      icon: dark ? Icons.dark_mode : Icons.light_mode,
+                      title: dark ? 'Dark Mode' : 'Light Mode',
+                      trailing: Switch(
+                        value: dark,
+                        onChanged: (_) => widget.onToggleDarkMode(),
+                        activeThumbColor: AppColors.neonGreen,
+                      ),
+                      onTap: widget.onToggleDarkMode,
+                      dark: dark,
+                    ),
+                    _buildDivider(dark),
+                    _buildSettingItem(
+                      icon: Icons.notifications,
+                      title: 'Notifications',
+                      trailing: Switch(
+                        value: user.notificationsEnabled,
+                        onChanged: (v) async {
+                          await _prefsSvc.toggleNotifications(user.uid, v);
+                        },
+                        activeThumbColor: AppColors.neonGreen,
+                      ),
+                      dark: dark,
+                    ),
+                    _buildDivider(dark),
+                    _buildSettingItem(
+                      icon: Icons.speed,
+                      title: 'Max Distance: ${user.preferredDistance.toStringAsFixed(0)} km',
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _openEditProfile(user),
+                      dark: dark,
+                    ),
+                    _buildDivider(dark),
+                    _buildSettingItem(
+                      icon: Icons.shield,
+                      title: 'Privacy & Safety',
+                      trailing: const Icon(Icons.chevron_right),
+                      dark: dark,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  user.email,
-                  style: TextStyle(
-                      fontSize: 13, color: Colors.white.withOpacity(0.75)),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  bio,
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withOpacity(0.8),
-                      fontStyle: FontStyle.italic),
-                ),
-              ],
-            ),
-          ),
-
-          // ── Stats Cards ──
-          Transform.translate(
-            offset: const Offset(0, -48),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(
-                      child: _buildStatCard(Icons.map,
-                          '${user.savedRoutesCount}', 'Saved Routes')),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: _buildStatCard(
-                          Icons.star, '${user.reviewsCount}', 'Reviews')),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: _buildStatCard(Icons.favorite,
-                          '${user.favoritesCount}', 'Favorites')),
-                ],
               ),
             ),
           ),
 
-          // ── Settings + Saved Routes list ──
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              itemCount: MockData.routes.length + 4,
-              itemBuilder: (context, index) {
-                // Settings header
-                if (index == 0) {
+          // ── Saved Routes Header ──
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Text(
+                'Saved Routes',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: dark ? Colors.white : AppColors.textDark,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Saved Routes Dynamic List ──
+          SliverToBoxAdapter(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _prefsSvc.savedRoutesStream(user.uid),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      'Settings',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: dark ? Colors.white : AppColors.textDark,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    child: Center(
+                      child: Text(
+                        'No saved routes yet. Explore the map to save some!',
+                        style: TextStyle(
+                          color: dark ? Colors.grey[400] : Colors.grey[600],
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   );
                 }
 
-                // Settings card
-                if (index == 1) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 32),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: dark ? AppColors.mediumBlue : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          _buildSettingItem(
-                            icon: Icons.edit,
-                            title: 'Edit Profile',
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => _openEditProfile(user),
-                          ),
-                          _buildDivider(),
-                          _buildSettingItem(
-                            icon: Icons.logout,
-                            title: 'Sign Out',
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () async {
-                              await AuthService().logout();
-                            },
-                          ),
-                          _buildDivider(),
-                          _buildSettingItem(
-                            icon: dark ? Icons.dark_mode : Icons.light_mode,
-                            title: dark ? 'Dark Mode' : 'Light Mode',
-                            trailing: Switch(
-                              value: dark,
-                              onChanged: (_) => context.read<ThemeProvider>().toggle(user.uid),
-                              activeThumbColor: AppColors.neonGreen,
-                            ),
-                            onTap: () => context.read<ThemeProvider>().toggle(user.uid),
-                          ),
-                          _buildDivider(),
-                          _buildSettingItem(
-                            icon: Icons.notifications,
-                            title: 'Notifications',
-                            trailing: Switch(
-                              value: user.notificationsEnabled,
-                              onChanged: (v) async {
-                                await _prefsSvc.toggleNotifications(
-                                    user.uid, v);
-                              },
-                              activeThumbColor: AppColors.neonGreen,
-                            ),
-                          ),
-                          _buildDivider(),
-                          _buildSettingItem(
-                            icon: Icons.speed,
-                            title:
-                                'Max Distance: ${user.preferredDistance.toStringAsFixed(0)} km',
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => _openEditProfile(user),
-                          ),
-                          _buildDivider(),
-                          _buildSettingItem(
-                            icon: Icons.shield,
-                            title: 'Privacy & Safety',
-                            trailing: const Icon(Icons.chevron_right),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                // Saved Routes header
-                if (index == 2) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      'Saved Routes',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: dark ? Colors.white : AppColors.textDark,
-                      ),
-                    ),
-                  );
-                }
-
-                // Bottom spacing
-                if (index == MockData.routes.length + 3) {
-                  return const SizedBox(height: 100);
-                }
-
-                // Saved route cards
-                final route = MockData.routes[index - 3];
-                return _buildSavedRouteCard(route);
+                final docs = snapshot.data!.docs;
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 100),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    try {
+                      final route = RouteModel.fromMap(data);
+                      return _buildSavedRouteCard(route, dark);
+                    } catch (e) {
+                      return const SizedBox.shrink();
+                    }
+                  },
+                );
               },
             ),
           ),
@@ -329,6 +253,158 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildSliverHeader(BuildContext context, UserModel user, String activityLabel, bool dark) {
+    final displayName = user.displayName.isNotEmpty ? user.displayName : 'SafeStride User';
+    final bio = user.bio.isNotEmpty ? user.bio : 'No bio yet';
+
+    return SliverAppBar(
+      expandedHeight: 290.0,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: AppColors.primaryBlue,
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            // When completely collapsed, max height is toolbarHeight + topPadding
+            // AppBar's default height is 56. Let's approximate based on constraints.
+            final top = constraints.biggest.height;
+            final isCollapsed = top <= MediaQuery.of(context).padding.top + 70;
+            return isCollapsed
+                ? Text(
+                    displayName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : const SizedBox.shrink();
+          },
+        ),
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                AppColors.primaryBlue,
+                AppColors.skyBlue,
+                AppColors.neonGreen,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            children: [
+              SizedBox(height: MediaQuery.of(context).padding.top + 32),
+              // Settings / Edit button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Activity badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        activityLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    // Edit profile icon
+                    GestureDetector(
+                      onTap: () => _openEditProfile(user),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Profile Avatar
+              Stack(
+                children: [
+                  Container(
+                    width: 96,
+                    height: 96,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 20,
+                        ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: Container(
+                        color: AppColors.skyBlue,
+                        child: const Icon(Icons.person, size: 48, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.neonGreen,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                      ),
+                      child: const Icon(Icons.emoji_events, size: 16, color: AppColors.textDark),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Text(
+                displayName,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                user.email,
+                style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.75)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                bio,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.8),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
   // ── Navigation ───────────────────────────────────────────────────────────
   void _openEditProfile(UserModel user) async {
     await Navigator.push(
@@ -336,14 +412,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(
         builder: (_) => EditProfileScreen(
           userModel: user,
+          isDarkMode: widget.isDarkMode,
         ),
       ),
     );
   }
 
   // ── Helper Widgets ───────────────────────────────────────────────────────
-  Widget _buildStatCard(IconData icon, String value, String label) {
-    final dark = (Theme.of(context).brightness == Brightness.dark);
+  Widget _buildStatCard(IconData icon, String value, String label, bool dark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -389,8 +465,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String title,
     Widget? trailing,
     VoidCallback? onTap,
+    required bool dark,
   }) {
-    final dark = (Theme.of(context).brightness == Brightness.dark);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -417,16 +493,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDivider() {
+  Widget _buildDivider(bool dark) {
     return Divider(
       height: 1,
       thickness: 1,
-      color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.lightBlue : Colors.grey[100],
+      color: dark ? AppColors.lightBlue : Colors.grey[100],
     );
   }
 
-  Widget _buildSavedRouteCard(route) {
-    final dark = (Theme.of(context).brightness == Brightness.dark);
+  Widget _buildSavedRouteCard(RouteModel route, bool dark) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),

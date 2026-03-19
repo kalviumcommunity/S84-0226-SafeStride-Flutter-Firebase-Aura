@@ -40,6 +40,26 @@ class RouteModel {
     this.latitude,
     this.longitude,
   });
+
+  factory RouteModel.fromMap(Map<String, dynamic> map) {
+    return RouteModel(
+      id: map['id'] as int? ?? 0,
+      name: map['name'] as String? ?? 'Unknown Route',
+      category: map['category'] as String? ?? 'Mixed',
+      distance: map['distance'] as String? ?? '0 km',
+      safety: map['safety'] as int? ?? 50,
+      lighting: map['lighting'] as String? ?? 'Average',
+      traffic: map['traffic'] as String? ?? 'Average',
+      crowd: map['crowd'] as String? ?? 'Average',
+      reviews: map['reviews'] as int? ?? 0,
+      rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
+      image: map['image'] as String? ?? '',
+      emoji: map['emoji'] as String? ?? '📍',
+      tag: map['tag'] as String?,
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+    );
+  }
 }
 
 class Review {
