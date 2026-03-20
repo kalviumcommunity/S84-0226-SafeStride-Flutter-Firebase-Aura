@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../screens/map_screen.dart';
@@ -6,9 +7,9 @@ import '../screens/discover_screen.dart';
 import '../screens/add_route_screen.dart';
 import '../screens/alerts_screen.dart';
 import '../screens/profile_screen.dart';
+import '../providers/theme_provider.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
-import '../config/routes.dart';
 import '../config/routes.dart';
 
 class MainScreen extends StatefulWidget {
@@ -40,7 +41,14 @@ class _MainScreenState extends State<MainScreen> {
       case 3:
         return const AlertsScreen();
       case 4:
-        return const ProfileScreen();
+        return ProfileScreen(
+          isDarkMode: Theme.of(context).brightness == Brightness.dark,
+          onToggleDarkMode: () {
+            final uid = FirebaseAuth.instance.currentUser?.uid;
+            if (uid == null) return;
+            context.read<ThemeProvider>().toggle(uid);
+          },
+        );
       default:
         return MapScreen(onRouteSelect: _handleRouteSelect);
     }
@@ -49,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -67,7 +75,12 @@ class _MainScreenState extends State<MainScreen> {
                   end: Alignment.bottomCenter,
                 ),
         ),
-        child: Stack(children: [_renderScreen(), _buildBottomNav(isDarkMode)]),
+        child: Stack(
+          children: [
+            Positioned.fill(child: _renderScreen()),
+            _buildBottomNav(isDarkMode),
+          ],
+        ),
       ),
     );
   }

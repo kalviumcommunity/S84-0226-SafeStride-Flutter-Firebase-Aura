@@ -48,7 +48,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
 
         // Build a UserModel — either from Firestore or a sensible default.
-        final userModel = snapshot.data ??
+        final userModel =
+            snapshot.data ??
             UserModel(
               uid: firebaseUser.uid,
               email: firebaseUser.email ?? '',
@@ -63,8 +64,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // ── Main Body ────────────────────────────────────────────────────────────
   Widget _buildBody(BuildContext context, UserModel user) {
     final dark = widget.isDarkMode;
-    final activityLabel =
-        user.activityType == 'cyclist' ? '🚴 Cyclist' : '🏃 Runner';
+    final activityLabel = user.activityType == 'cyclist'
+        ? '🚴 Cyclist'
+        : '🏃 Runner';
 
     return Scaffold(
       backgroundColor: dark ? AppColors.darkBlue : AppColors.lightBackground,
@@ -82,16 +84,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                        child: _buildStatCard(
-                            Icons.map, '${user.savedRoutesCount}', 'Saved Routes', dark)),
+                      child: _buildStatCard(
+                        Icons.map,
+                        '${user.savedRoutesCount}',
+                        'Saved Routes',
+                        dark,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: _buildStatCard(
-                            Icons.star, '${user.reviewsCount}', 'Reviews', dark)),
+                      child: _buildStatCard(
+                        Icons.star,
+                        '${user.reviewsCount}',
+                        'Reviews',
+                        dark,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
-                        child: _buildStatCard(
-                            Icons.favorite, '${user.favoritesCount}', 'Favorites', dark)),
+                      child: _buildStatCard(
+                        Icons.favorite,
+                        '${user.favoritesCount}',
+                        'Favorites',
+                        dark,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -173,7 +190,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _buildDivider(dark),
                     _buildSettingItem(
                       icon: Icons.speed,
-                      title: 'Max Distance: ${user.preferredDistance.toStringAsFixed(0)} km',
+                      title:
+                          'Max Distance: ${user.preferredDistance.toStringAsFixed(0)} km',
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _openEditProfile(user),
                       dark: dark,
@@ -216,7 +234,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 32,
+                    ),
                     child: Center(
                       child: Text(
                         'No saved routes yet. Explore the map to save some!',
@@ -253,8 +274,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSliverHeader(BuildContext context, UserModel user, String activityLabel, bool dark) {
-    final displayName = user.displayName.isNotEmpty ? user.displayName : 'SafeStride User';
+  Widget _buildSliverHeader(
+    BuildContext context,
+    UserModel user,
+    String activityLabel,
+    bool dark,
+  ) {
+    final displayName = user.displayName.isNotEmpty
+        ? user.displayName
+        : 'SafeStride User';
     final bio = user.bio.isNotEmpty ? user.bio : 'No bio yet';
 
     return SliverAppBar(
@@ -306,7 +334,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     // Activity badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -330,7 +361,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ],
@@ -356,7 +391,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ClipOval(
                       child: Container(
                         color: AppColors.skyBlue,
-                        child: const Icon(Icons.person, size: 48, color: Colors.white),
+                        child: const Icon(
+                          Icons.person,
+                          size: 48,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -371,7 +410,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white, width: 4),
                       ),
-                      child: const Icon(Icons.emoji_events, size: 16, color: AppColors.textDark),
+                      child: const Icon(
+                        Icons.emoji_events,
+                        size: 16,
+                        color: AppColors.textDark,
+                      ),
                     ),
                   ),
                 ],
@@ -388,7 +431,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 4),
               Text(
                 user.email,
-                style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.75)),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.75),
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -405,16 +451,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
   // ── Navigation ───────────────────────────────────────────────────────────
   void _openEditProfile(UserModel user) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => EditProfileScreen(
-          userModel: user,
-          isDarkMode: widget.isDarkMode,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => EditProfileScreen(userModel: user)),
     );
   }
 
@@ -435,9 +477,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          Icon(icon,
-              color: dark ? AppColors.neonGreen : AppColors.primaryBlue,
-              size: 24),
+          Icon(
+            icon,
+            color: dark ? AppColors.neonGreen : AppColors.primaryBlue,
+            size: 24,
+          ),
           const SizedBox(height: 8),
           Text(
             value,
@@ -473,8 +517,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(icon,
-                color: dark ? Colors.grey[400] : Colors.grey[600], size: 20),
+            Icon(
+              icon,
+              color: dark ? Colors.grey[400] : Colors.grey[600],
+              size: 20,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -553,14 +600,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('•',
-                        style: TextStyle(
-                            color:
-                                dark ? Colors.grey[400] : Colors.grey[600])),
+                    Text(
+                      '•',
+                      style: TextStyle(
+                        color: dark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: dark ? AppColors.lightBlue : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
@@ -588,8 +639,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shield,
-                    color: AppColors.getSafetyColor(route.safety), size: 20),
+                Icon(
+                  Icons.shield,
+                  color: AppColors.getSafetyColor(route.safety),
+                  size: 20,
+                ),
                 Text(
                   '${route.safety}%',
                   style: TextStyle(

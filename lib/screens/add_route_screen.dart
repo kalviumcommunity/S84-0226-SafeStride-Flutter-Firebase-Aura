@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../constants/app_colors.dart';
 import '../services/firestore_service.dart';
+import '../widgets/base_sliver_scaffold.dart';
 import '../widgets/location_step.dart';
 
 class AddRouteScreen extends StatefulWidget {
@@ -32,6 +33,18 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
   final _distanceController = TextEditingController();
   final _emailController = TextEditingController();
   final _descriptionController = TextEditingController();
+  bool _showPageContent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _showPageContent = true;
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -293,7 +306,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.neonGreen.withOpacity(0.4),
+                      color: AppColors.neonGreen.withValues(alpha: 0.4),
                       blurRadius: 32,
                       offset: const Offset(0, 8),
                     ),
@@ -311,7 +324,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+                  color: (Theme.of(context).brightness == Brightness.dark)
+                      ? Colors.white
+                      : AppColors.textDark,
                 ),
               ),
               const SizedBox(height: 8),
@@ -330,107 +345,103 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: (Theme.of(context).brightness == Brightness.dark)
-          ? AppColors.darkBlue
-          : AppColors.lightBackground,
-      body: Column(
-        children: [
-          // Header
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: (Theme.of(context).brightness == Brightness.dark)
-                    ? [AppColors.lightBlue, Colors.transparent]
-                    : [AppColors.lightBackground, Colors.transparent],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOut,
+      opacity: _showPageContent ? 1 : 0,
+      child: AnimatedSlide(
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeOutCubic,
+        offset: _showPageContent ? Offset.zero : const Offset(0, 0.03),
+        child: BaseSliverScaffold(
+          title: 'Add Route',
+          subtitle: 'Share your favorite route with the community',
+          slivers: [
+            SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+                    child: Column(
+                      children: [
+                        _buildProgressSection(),
+                        const SizedBox(height: 24),
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOut,
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color:
+                                (Theme.of(context).brightness ==
+                                    Brightness.dark)
+                                ? AppColors.mediumBlue.withValues(alpha: 0.35)
+                                : Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha:
+                                      (Theme.of(context).brightness ==
+                                          Brightness.dark)
+                                      ? 0.25
+                                      : 0.08,
+                                ),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: _buildStepContent(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-            padding: const EdgeInsets.only(
-              left: 24,
-              right: 24,
-              top: 64,
-              bottom: 24,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Add Route',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: (Theme.of(context).brightness == Brightness.dark)
-                        ? Colors.white
-                        : AppColors.textDark,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Share your favorite route with the community',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: (Theme.of(context).brightness == Brightness.dark)
-                        ? Colors.grey[400]
-                        : Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Progress Steps
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    for (int i = 1; i <= 3; i++) ...[
-                      _buildStepIndicator(i),
-                      if (i < 3)
-                        Expanded(
-                          child: Container(
-                            height: 4,
-                            margin: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              gradient: step > i
-                                  ? AppColors.neonGradient
-                                  : null,
-                              color: step > i
-                                  ? null
-                                  : (Theme.of(context).brightness == Brightness.dark)
-                                  ? AppColors.mediumBlue
-                                  : Colors.grey[200],
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildStepLabel('Details', 1),
-                    _buildStepLabel('Location', 2),
-                    _buildStepLabel('Media', 3),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Step Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _buildStepContent(),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildProgressSection() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            for (int i = 1; i <= 3; i++) ...[
+              _buildStepIndicator(i),
+              if (i < 3)
+                Expanded(
+                  child: Container(
+                    height: 4,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      gradient: step > i ? AppColors.neonGradient : null,
+                      color: step > i
+                          ? null
+                          : (Theme.of(context).brightness == Brightness.dark)
+                          ? AppColors.mediumBlue
+                          : Colors.grey[200],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildStepLabel('Details', 1),
+            _buildStepLabel('Location', 2),
+            _buildStepLabel('Media', 3),
+          ],
+        ),
+      ],
     );
   }
 
@@ -449,7 +460,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
         boxShadow: step >= stepNum
             ? [
                 BoxShadow(
-                  color: AppColors.neonGreen.withOpacity(0.3),
+                  color: AppColors.neonGreen.withValues(alpha: 0.3),
                   blurRadius: 12,
                 ),
               ]
@@ -490,9 +501,29 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
 
   Widget _buildStepContent() {
     debugPrint('[AddRouteScreen] Rendering step $step');
-    return IndexedStack(
-      index: (step - 1).clamp(0, 2),
-      children: [_buildStep1(), _buildStep2(), _buildStep3()],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 260),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      transitionBuilder: (child, animation) {
+        final slideAnimation = Tween<Offset>(
+          begin: const Offset(0, 0.05),
+          end: Offset.zero,
+        ).animate(animation);
+
+        return FadeTransition(
+          opacity: animation,
+          child: SlideTransition(position: slideAnimation, child: child),
+        );
+      },
+      child: KeyedSubtree(
+        key: ValueKey<int>(step),
+        child: switch (step) {
+          2 => _buildStep2(),
+          3 => _buildStep3(),
+          _ => _buildStep1(),
+        },
+      ),
     );
   }
 
@@ -507,19 +538,25 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _routeNameController,
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'Enter route name',
               hintStyle: TextStyle(
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.grey[500]
+                    : Colors.grey[400],
               ),
               filled: true,
               fillColor: (Theme.of(context).brightness == Brightness.dark)
@@ -555,7 +592,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -563,12 +602,16 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'example@email.com',
               hintStyle: TextStyle(
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.grey[500]
+                    : Colors.grey[400],
               ),
               filled: true,
               fillColor: (Theme.of(context).brightness == Brightness.dark)
@@ -606,7 +649,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 12),
@@ -633,7 +678,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -641,12 +688,16 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _distanceController,
             keyboardType: TextInputType.number,
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: '0.0',
               hintStyle: TextStyle(
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.grey[500]
+                    : Colors.grey[400],
               ),
               filled: true,
               fillColor: (Theme.of(context).brightness == Brightness.dark)
@@ -689,7 +740,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -697,12 +750,16 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             controller: _descriptionController,
             maxLines: 3,
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : AppColors.textDark,
             ),
             decoration: InputDecoration(
               hintText: 'Describe your route...',
               hintStyle: TextStyle(
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[500] : Colors.grey[400],
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.grey[500]
+                    : Colors.grey[400],
               ),
               filled: true,
               fillColor: (Theme.of(context).brightness == Brightness.dark)
@@ -778,14 +835,14 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppColors.neonGreen.withOpacity(0.3),
+                    color: AppColors.neonGreen.withValues(alpha: 0.3),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                   ),
                 ],
@@ -892,7 +949,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               '${_selectedMedia.length} photo(s) selected',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.white
+                    : AppColors.textDark,
               ),
             ),
           ),
@@ -902,7 +961,7 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _selectedMedia.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
               itemBuilder: (context, index) {
                 final media = _selectedMedia[index];
                 return Stack(
@@ -914,10 +973,11 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
                         width: 92,
                         height: 92,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (_, _, _) => Container(
                           width: 92,
                           height: 92,
-                          color: (Theme.of(context).brightness == Brightness.dark)
+                          color:
+                              (Theme.of(context).brightness == Brightness.dark)
                               ? AppColors.mediumBlue
                               : Colors.grey[200],
                           child: const Icon(Icons.image_not_supported_outlined),
@@ -966,7 +1026,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
             '💡 Tip: Adding photos helps others discover your route!',
             style: TextStyle(
               fontSize: 14,
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[300] : Colors.grey[700],
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.grey[300]
+                  : Colors.grey[700],
             ),
           ),
         ),
@@ -1005,7 +1067,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
           child: Text(
             'Back',
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark) ? Colors.grey[400] : Colors.grey[600],
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.grey[400]
+                  : Colors.grey[600],
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -1025,10 +1089,15 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: (Theme.of(context).brightness == Brightness.dark) ? AppColors.mediumBlue : Colors.white,
+          color: (Theme.of(context).brightness == Brightness.dark)
+              ? AppColors.mediumBlue
+              : Colors.white,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: Column(
@@ -1055,7 +1124,9 @@ class _AddRouteScreenState extends State<AddRouteScreen> {
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: (Theme.of(context).brightness == Brightness.dark) ? Colors.white : AppColors.textDark,
+                color: (Theme.of(context).brightness == Brightness.dark)
+                    ? Colors.white
+                    : AppColors.textDark,
               ),
             ),
           ],
