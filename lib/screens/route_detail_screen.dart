@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/mock_data.dart';
@@ -95,37 +98,7 @@ class RouteDetailScreen extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Row(
-                            children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.share,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.bookmark_border,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ],
-                          ),
+                          _RouteActionsRow(routeData: routeData),
                         ],
                       ),
                     ),
@@ -593,6 +566,166 @@ class RouteDetailScreen extends StatelessWidget {
         builder: (_) =>
             NavigationScreen(route: routeData, profile: RoutingProfile.foot),
       ),
+    );
+  }
+}
+
+class _RouteActionsRow extends StatefulWidget {
+  final RouteModel routeData;
+  const _RouteActionsRow({required this.routeData});
+
+  @override
+  State<_RouteActionsRow> createState() => _RouteActionsRowState();
+}
+
+class _RouteActionsRowState extends State<_RouteActionsRow> {
+  bool _isBookmarked = false;
+  bool _isLoading = true;
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBookmarkStatus();
+  }
+
+  Future<void> _checkBookmarkStatus() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('saved_routes')
+          .doc(widget.routeData.id.toString())
+          .get();
+      if (mounted) {
+        setState(() {
+          _isBookmarked = doc.exists;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please log in to save routes')),
+      );
+      return;
+    }
+
+    final newStatus = !_isBookmarked;
+    setState(() => _isBookmarked = newStatus);
+
+    try {
+      final docRef = _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('saved_routes')
+          .doc(widget.routeData.id.toString());
+
+      if (newStatus) {
+        await docRef.set({
+          'id': widget.routeData.id,
+          'name': widget.routeData.name,
+          'category': widget.routeData.category,
+          'distance': widget.routeData.distance,
+          'safety': widget.routeData.safety,
+          'lighting': widget.routeData.lighting,
+          'traffic': widget.routeData.traffic,
+          'crowd': widget.routeData.crowd,
+          'reviews': widget.routeData.reviews,
+          'rating': widget.routeData.rating,
+          'image': widget.routeData.image,
+          'emoji': widget.routeData.emoji,
+          'tag': widget.routeData.tag,
+          'latitude': widget.routeData.latitude,
+          'longitude': widget.routeData.longitude,
+          'savedAt': FieldValue.serverTimestamp(),
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Route saved to profile')),
+          );
+        }
+      } else {
+        await docRef.delete();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Route removed from profile')),
+          );
+        }
+      }
+    } catch (e) {
+      // Revert if failed
+      setState(() => _isBookmarked = !newStatus);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating bookmark: $e')),
+        );
+      }
+    }
+  }
+
+  void _shareRoute() {
+    Clipboard.setData(ClipboardData(
+        text:
+            'Check out this safe route: ${widget.routeData.name} on SafeStride!'));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Link copied to clipboard!')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: _shareRoute,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.share, color: Colors.white, size: 20),
+          ),
+        ),
+        const SizedBox(width: 12),
+        GestureDetector(
+          onTap: _isLoading ? null : _toggleBookmark,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Icon(
+                    _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+          ),
+        ),
+      ],
     );
   }
 }
