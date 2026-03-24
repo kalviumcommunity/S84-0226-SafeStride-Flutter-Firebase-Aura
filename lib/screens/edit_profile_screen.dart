@@ -25,6 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   late double _preferredDistance;
   late bool _notificationsEnabled;
 
+  final _prefsSvc = UserPreferencesService();
   bool _isSaving = false;
 
   late AnimationController _animCtrl;
@@ -61,8 +62,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     setState(() => _isSaving = true);
 
     try {
-      final svc = UserPreferencesService();
-      await svc.updatePreferences(uid, {
+      await _prefsSvc.updatePreferences(uid, {
         'displayName': _nameCtrl.text.trim(),
         'bio': _bioCtrl.text.trim(),
         'activityType': _activityType,
