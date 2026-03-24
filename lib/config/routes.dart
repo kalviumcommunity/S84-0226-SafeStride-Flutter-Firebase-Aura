@@ -38,19 +38,6 @@ class RouteDetailArguments {
   const RouteDetailArguments({required this.route});
 }
 
-class ScreenArguments {
-  final bool isDarkMode;
-  final Function(RouteModel)? onRouteSelect;
-  final VoidCallback? onToggleDarkMode;
-  final VoidCallback? onBack;
-
-  const ScreenArguments({
-    required this.isDarkMode,
-    this.onRouteSelect,
-    this.onToggleDarkMode,
-    this.onBack,
-  });
-}
 
 /// Centralized route configuration
 class RouteGenerator {
