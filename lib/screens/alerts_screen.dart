@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/mock_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/route_model.dart';
 import '../widgets/base_sliver_scaffold.dart';
 
@@ -83,13 +83,64 @@ class AlertsScreen extends StatelessWidget {
             ),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final alert = MockData.alerts[index];
-              return _buildAlertCard(context, alert);
-            }, childCount: MockData.alerts.length),
+        SliverToBoxAdapter(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('alerts')
+                .orderBy('createdAt', descending: true)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text(
+                      'Failed to load alerts.',
+                      style: TextStyle(
+                        color: (Theme.of(context).brightness == Brightness.dark)
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                );
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Center(
+                    child: Text(
+                      'No active alerts at this time.',
+                      style: TextStyle(
+                        color: (Theme.of(context).brightness == Brightness.dark)
+                            ? Colors.grey[400]
+                            : Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final docs = snapshot.data!.docs;
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: docs.length,
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final alert = AlertModel.fromMap(data, docs[index].id);
+                  return _buildAlertCard(context, alert);
+                },
+              );
+            },
           ),
         ),
       ],

@@ -100,4 +100,16 @@ class AlertModel {
     required this.time,
     required this.color,
   });
+
+  factory AlertModel.fromMap(Map<String, dynamic> map, String id) {
+    return AlertModel(
+      id: int.tryParse(id) ?? map['id'] as int? ?? 0,
+      type: map['type'] as String? ?? 'info',
+      title: map['title'] as String? ?? 'New Alert',
+      message: map['message'] as String? ?? '',
+      location: map['location'] as String? ?? 'Global',
+      time: map['time'] as String? ?? 'Just now',
+      color: map['color'] as String? ?? '#000000',
+    );
+  }
 }
