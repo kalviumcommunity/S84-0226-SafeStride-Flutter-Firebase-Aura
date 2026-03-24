@@ -6,19 +6,14 @@ import '../services/auth_service.dart';
 import '../services/user_preferences_service.dart';
 import 'edit_profile_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import '../models/route_model.dart';
+import '../providers/theme_provider.dart';
 
 /// Profile tab — streams the user's Firestore profile in real time and renders
 /// stats, settings, and saved routes.
 class ProfileScreen extends StatefulWidget {
-  final bool isDarkMode;
-  final VoidCallback onToggleDarkMode;
-
-  const ProfileScreen({
-    super.key,
-    required this.isDarkMode,
-    required this.onToggleDarkMode,
-  });
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -40,7 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // While loading, show a skeleton-ish progress indicator.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            backgroundColor: widget.isDarkMode
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
                 ? AppColors.darkBlue
                 : AppColors.lightBackground,
             body: const Center(child: CircularProgressIndicator()),
@@ -63,7 +58,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // ── Main Body ────────────────────────────────────────────────────────────
   Widget _buildBody(BuildContext context, UserModel user) {
-    final dark = widget.isDarkMode;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final activityLabel = user.activityType == 'cyclist'
         ? '🚴 Cyclist'
         : '🏃 Runner';
@@ -168,10 +163,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: dark ? 'Dark Mode' : 'Light Mode',
                       trailing: Switch(
                         value: dark,
-                        onChanged: (_) => widget.onToggleDarkMode(),
+                        onChanged: (_) {
+                          if (user.uid.isNotEmpty) {
+                            context.read<ThemeProvider>().toggle(user.uid);
+                          }
+                        },
                         activeThumbColor: AppColors.neonGreen,
                       ),
-                      onTap: widget.onToggleDarkMode,
+                      onTap: () {
+                        if (user.uid.isNotEmpty) {
+                          context.read<ThemeProvider>().toggle(user.uid);
+                        }
+                      },
                       dark: dark,
                     ),
                     _buildDivider(dark),
