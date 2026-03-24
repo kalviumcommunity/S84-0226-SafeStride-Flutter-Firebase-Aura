@@ -538,10 +538,11 @@ class _LandingPageState extends State<LandingPage>
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
               _safeChip(Icons.wb_twilight_rounded, 'Excellent Lighting'),
-              const SizedBox(width: 8),
               _safeChip(Icons.people_outline_rounded, 'Low Crowd'),
             ],
           ),
