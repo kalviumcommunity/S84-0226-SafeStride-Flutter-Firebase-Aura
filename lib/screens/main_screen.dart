@@ -8,6 +8,7 @@ import '../screens/profile_screen.dart';
 import '../models/route_model.dart';
 import '../constants/app_colors.dart';
 import '../config/routes.dart';
+import '../screens/responsive_layout.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -71,6 +72,16 @@ class _MainScreenState extends State<MainScreen> {
             _buildBottomNav(isDarkMode),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ResponsiveLayout()),
+          );
+        },
+        backgroundColor: AppColors.primaryBlue,
+        child: const Icon(Icons.dashboard_customize, color: Colors.white),
       ),
     );
   }
