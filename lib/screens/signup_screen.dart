@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login/login_screen.dart';
 import 'otp_screen.dart';
@@ -75,7 +75,7 @@ class _SignupScreenState extends State<SignupScreen>
 
     setState(() => _isLoading = true);
     try {
-      // Store OTP in Firestore â€“ returns the 6-digit code for demo display
+      // Store OTP in Firestore - returns the 6-digit code for demo display
       final code =
           await AuthService().generateAndStoreOtp(email, name);
 
@@ -150,7 +150,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // â”€â”€ Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  
   Widget _buildToggle() {
     return Container(
       padding: const EdgeInsets.all(5),
@@ -160,7 +160,7 @@ class _SignupScreenState extends State<SignupScreen>
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        children: [_pill('ðŸƒ Runner', 0), _pill('ðŸš´ Cyclist', 1)],
+        children: [_pill('🏃 Runner', 0), _pill('🚴 Cyclist', 1)],
       ),
     );
   }
@@ -198,7 +198,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  
   Widget _buildHeader() {
     return Column(
       children: [
@@ -240,7 +240,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // â”€â”€ Form Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  
   Widget _buildFormCard() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -320,7 +320,7 @@ class _SignupScreenState extends State<SignupScreen>
           ),
           const SizedBox(height: 6),
           const Text(
-            'Step 1 of 3 Â· Next: Email Verification',
+            'Step 1 of 3 · Next: Email Verification',
             style:
                 TextStyle(fontSize: 12, color: Color(0xFFABB8C9)),
           ),
@@ -398,7 +398,7 @@ class _SignupScreenState extends State<SignupScreen>
     );
   }
 
-  // â”€â”€ Continue Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  
   Widget _buildContinueButton() {
     return SizedBox(
       width: double.infinity,
