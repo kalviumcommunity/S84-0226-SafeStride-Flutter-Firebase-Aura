@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login/login_screen.dart';
 import 'otp_screen.dart';
@@ -96,7 +96,7 @@ class _SignupScreenState extends State<SignupScreen>
     } catch (e) {
       if (mounted) {
         _showSnack(
-            e is AuthFailure ? e.message : 'Something went wrong. Try again.',
+            e is AuthFailure ? e.message : 'Error: ${e.toString()}',
             isError: true);
       }
     } finally {
