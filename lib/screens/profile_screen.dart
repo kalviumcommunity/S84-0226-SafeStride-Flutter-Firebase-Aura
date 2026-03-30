@@ -158,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Sign Out',
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () async {
-                        await AuthService().logout();
+                        await AuthService().signOutGoogle();
                       },
                       dark: dark,
                     ),

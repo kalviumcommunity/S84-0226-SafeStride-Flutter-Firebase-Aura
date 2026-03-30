@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter Web (Chrome)",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "chrome",
+      "args": [
+        "--web-port=59562",
+        "--dart-define=GOOGLE_WEB_CLIENT_ID=682679364127-flmir8uj6tglk6pjsc2m446k5iba4jkj.apps.googleusercontent.com"
+      ]
+    }
+  ]
+}

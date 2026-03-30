@@ -30,13 +30,14 @@ class _SignupScreenState extends State<SignupScreen>
   void initState() {
     super.initState();
     _animController = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
-    _fadeAnim =
-        CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-            begin: const Offset(0, 0.08), end: Offset.zero)
-        .animate(
-            CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -76,8 +77,7 @@ class _SignupScreenState extends State<SignupScreen>
     setState(() => _isLoading = true);
     try {
       // Store OTP in Firestore â€“ returns the 6-digit code for demo display
-      final code =
-          await AuthService().generateAndStoreOtp(email, name);
+      final code = await AuthService().generateAndStoreOtp(email, name);
 
       if (mounted) {
         Navigator.push(
@@ -96,8 +96,9 @@ class _SignupScreenState extends State<SignupScreen>
     } catch (e) {
       if (mounted) {
         _showSnack(
-            e is AuthFailure ? e.message : 'Something went wrong. Try again.',
-            isError: true);
+          e is AuthFailure ? e.message : 'Something went wrong. Try again.',
+          isError: true,
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -105,16 +106,23 @@ class _SignupScreenState extends State<SignupScreen>
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg,
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          msg,
           style: const TextStyle(
-              fontWeight: FontWeight.w500, color: Colors.white)),
-      backgroundColor:
-          isError ? const Color(0xFFFF5252) : const Color(0xFF6EEB5F),
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      margin: const EdgeInsets.all(16),
-    ));
+            fontWeight: FontWeight.w500,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: isError
+            ? const Color(0xFFFF5252)
+            : const Color(0xFF6EEB5F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
   }
 
   @override
@@ -127,8 +135,7 @@ class _SignupScreenState extends State<SignupScreen>
           child: SlideTransition(
             position: _slideAnim,
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -139,6 +146,10 @@ class _SignupScreenState extends State<SignupScreen>
                   _buildFormCard(),
                   const SizedBox(height: 24),
                   _buildContinueButton(),
+                  const SizedBox(height: 20),
+                  _buildDivider(),
+                  const SizedBox(height: 20),
+                  _buildGoogleButton(),
                   const SizedBox(height: 28),
                   _buildLoginLink(),
                 ],
@@ -172,17 +183,17 @@ class _SignupScreenState extends State<SignupScreen>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
         decoration: BoxDecoration(
           color: active ? const Color(0xFF6EEB5F) : Colors.transparent,
           borderRadius: BorderRadius.circular(50),
           boxShadow: active
               ? [
                   BoxShadow(
-                      color: const Color(0xFF6EEB5F).withOpacity(0.45),
-                      blurRadius: 12,
-                      spreadRadius: 1),
+                    color: const Color(0xFF6EEB5F).withOpacity(0.45),
+                    blurRadius: 12,
+                    spreadRadius: 1,
+                  ),
                 ]
               : [],
         ),
@@ -210,31 +221,37 @@ class _SignupScreenState extends State<SignupScreen>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                  color: const Color(0xFF6EEB5F).withOpacity(0.50),
-                  blurRadius: 20,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 6)),
+                color: const Color(0xFF6EEB5F).withOpacity(0.50),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 6),
+              ),
             ],
           ),
-          child: const Icon(Icons.person_add_alt_1_rounded,
-              color: Colors.white, size: 32),
+          child: const Icon(
+            Icons.person_add_alt_1_rounded,
+            color: Colors.white,
+            size: 32,
+          ),
         ),
         const SizedBox(height: 16),
         const Text(
           'Create Account',
           style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1A2035),
-              letterSpacing: -0.3),
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF1A2035),
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 5),
         const Text(
           'Join thousands of safe striders',
           style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF8494A9),
-              fontWeight: FontWeight.w400),
+            fontSize: 14,
+            color: Color(0xFF8494A9),
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ],
     );
@@ -249,13 +266,15 @@ class _SignupScreenState extends State<SignupScreen>
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF6EEB5F).withOpacity(0.08),
-              blurRadius: 32,
-              offset: const Offset(0, 10)),
+            color: const Color(0xFF6EEB5F).withOpacity(0.08),
+            blurRadius: 32,
+            offset: const Offset(0, 10),
+          ),
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 16,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -280,11 +299,12 @@ class _SignupScreenState extends State<SignupScreen>
             obscure: _obscurePassword,
             suffix: IconButton(
               icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: const Color(0xFFABB8C9),
-                  size: 20),
+                _obscurePassword
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: const Color(0xFFABB8C9),
+                size: 20,
+              ),
               onPressed: () =>
                   setState(() => _obscurePassword = !_obscurePassword),
             ),
@@ -297,11 +317,12 @@ class _SignupScreenState extends State<SignupScreen>
             obscure: _obscureConfirm,
             suffix: IconButton(
               icon: Icon(
-                  _obscureConfirm
-                      ? Icons.visibility_off_outlined
-                      : Icons.visibility_outlined,
-                  color: const Color(0xFFABB8C9),
-                  size: 20),
+                _obscureConfirm
+                    ? Icons.visibility_off_outlined
+                    : Icons.visibility_outlined,
+                color: const Color(0xFFABB8C9),
+                size: 20,
+              ),
               onPressed: () =>
                   setState(() => _obscureConfirm = !_obscureConfirm),
             ),
@@ -321,8 +342,7 @@ class _SignupScreenState extends State<SignupScreen>
           const SizedBox(height: 6),
           const Text(
             'Step 1 of 3 Â· Next: Email Verification',
-            style:
-                TextStyle(fontSize: 12, color: Color(0xFFABB8C9)),
+            style: TextStyle(fontSize: 12, color: Color(0xFFABB8C9)),
           ),
         ],
       ),
@@ -340,27 +360,31 @@ class _SignupScreenState extends State<SignupScreen>
         boxShadow: active
             ? [
                 BoxShadow(
-                    color: const Color(0xFF6EEB5F).withOpacity(0.40),
-                    blurRadius: 8,
-                    spreadRadius: 1)
+                  color: const Color(0xFF6EEB5F).withOpacity(0.40),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
               ]
             : [],
       ),
       alignment: Alignment.center,
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              color: active ? Colors.white : const Color(0xFFABB8C9))),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+          color: active ? Colors.white : const Color(0xFFABB8C9),
+        ),
+      ),
     );
   }
 
   Widget _stepLine() => Container(
-        width: 32,
-        height: 2,
-        color: const Color(0xFFE4E9F2),
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-      );
+    width: 32,
+    height: 2,
+    color: const Color(0xFFE4E9F2),
+    margin: const EdgeInsets.symmetric(horizontal: 4),
+  );
 
   Widget _buildInput({
     required TextEditingController controller,
@@ -381,15 +405,14 @@ class _SignupScreenState extends State<SignupScreen>
         keyboardType: keyboardType,
         obscureText: obscure,
         style: const TextStyle(
-            fontSize: 15,
-            color: Color(0xFF1A2035),
-            fontWeight: FontWeight.w500),
+          fontSize: 15,
+          color: Color(0xFF1A2035),
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-              const TextStyle(color: Color(0xFFABB8C9), fontSize: 14),
-          prefixIcon:
-              Icon(icon, color: const Color(0xFFABB8C9), size: 20),
+          hintStyle: const TextStyle(color: Color(0xFFABB8C9), fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFFABB8C9), size: 20),
           suffixIcon: suffix,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -411,9 +434,10 @@ class _SignupScreenState extends State<SignupScreen>
               ? []
               : [
                   BoxShadow(
-                      color: const Color(0xFF6EEB5F).withOpacity(0.50),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6))
+                    color: const Color(0xFF6EEB5F).withOpacity(0.50),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
                 ],
         ),
         child: ElevatedButton(
@@ -421,24 +445,31 @@ class _SignupScreenState extends State<SignupScreen>
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF6EEB5F),
             foregroundColor: Colors.white,
-            disabledBackgroundColor:
-                const Color(0xFF6EEB5F).withOpacity(0.6),
+            disabledBackgroundColor: const Color(0xFF6EEB5F).withOpacity(0.6),
             elevation: 0,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18)),
+              borderRadius: BorderRadius.circular(18),
+            ),
           ),
           child: _isLoading
               ? const SizedBox(
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2.5, color: Colors.white))
+                    strokeWidth: 2.5,
+                    color: Colors.white,
+                  ),
+                )
               : const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Continue',
-                        style: TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Continue',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     SizedBox(width: 8),
                     Icon(Icons.arrow_forward_rounded, size: 18),
                   ],
@@ -452,18 +483,127 @@ class _SignupScreenState extends State<SignupScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text('Already have an account?  ',
-            style: TextStyle(color: Color(0xFF8494A9), fontSize: 14)),
+        const Text(
+          'Already have an account?  ',
+          style: TextStyle(color: Color(0xFF8494A9), fontSize: 14),
+        ),
         GestureDetector(
-          onTap: () => Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (_) => const LoginScreen())),
-          child: const Text('Sign In',
-              style: TextStyle(
-                  color: Color(0xFF6EEB5F),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700)),
+          onTap: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          ),
+          child: const Text(
+            'Sign In',
+            style: TextStyle(
+              color: Color(0xFF6EEB5F),
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ),
       ],
     );
+  }
+
+  // ── Divider ────────────────────────────────────────────────────────────────
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Text(
+            'or sign up with',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+          ),
+        ),
+        Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+      ],
+    );
+  }
+
+  // ── Google Button ──────────────────────────────────────────────────────────
+  Widget _buildGoogleButton() {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE4E9F2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: _isLoading ? null : _signUpWithGoogle,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF4285F4),
+                        ),
+                      ),
+                    )
+                  : const Text(
+                      'G',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4285F4),
+                      ),
+                    ),
+              const SizedBox(width: 10),
+              Text(
+                _isLoading ? 'Signing up...' : 'Sign up with Google',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A2035),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Google Sign-Up ─────────────────────────────────────────────────────────
+  Future<void> _signUpWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().signInWithGoogle(
+        activityType: _selectedMode == 0 ? 'runner' : 'cyclist',
+      );
+
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack(
+          e is AuthFailure
+              ? e.message
+              : 'Google sign-up failed. Please try again.',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 }
