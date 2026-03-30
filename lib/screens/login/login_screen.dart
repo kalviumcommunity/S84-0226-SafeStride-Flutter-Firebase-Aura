@@ -160,6 +160,30 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().signInWithGoogle(
+        activityType: _selectedMode == 0 ? 'runner' : 'cyclist',
+      );
+
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnack(
+          e is AuthFailure
+              ? e.message
+              : 'Google sign-in failed. Please try again.',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _showSnack(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -518,22 +542,33 @@ class _LoginScreenState extends State<LoginScreen>
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: () {},
-          child: const Row(
+          onTap: _isLoading ? null : _signInWithGoogle,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFF4285F4),
+                        ),
+                      ),
+                    )
+                  : const Text(
+                      'G',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4285F4),
+                      ),
+                    ),
+              const SizedBox(width: 10),
               Text(
-                'G',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF4285F4),
-                ),
-              ),
-              SizedBox(width: 10),
-              Text(
-                'Sign in with Google',
-                style: TextStyle(
+                _isLoading ? 'Signing in...' : 'Sign in with Google',
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF1A2035),
