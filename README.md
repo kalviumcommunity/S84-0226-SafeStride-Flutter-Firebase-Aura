@@ -1,159 +1,167 @@
 # SafeStride
 
-## Overview
+SafeStride is a Flutter + Firebase application for runners and cyclists to discover, evaluate, and share safer routes.
 
-SafeStride is a mobile-first platform designed to help runners and cyclists in busy urban environments discover safe, reliable, and community-validated routes.
+## What This Project Includes
 
-In many cities, fitness enthusiasts struggle to identify routes that are not only efficient but also safe and well-reviewed by real users. Existing map solutions often optimize for distance or speed, but rarely for on-ground safety and community trust.
-
-SafeStride addresses this gap by combining Flutter’s cross-platform UI capabilities with Firebase’s real-time backend to surface routes backed by real user experiences.
-
----
-
-## Problem Statement
-
-Runners and cyclists in busy cities lack access to safe, well-reviewed routes or community-endorsed paths. This often leads to unsafe route choices, poor user confidence, and fragmented fitness experiences.
-
----
-
-## Our Solution
-
-SafeStride enables users to:
-
-- Discover routes recommended by real runners and cyclists  
-- View community-backed route data in real time  
-- Contribute new route insights to help other users  
-- Access continuously synced data powered by Firebase  
-
-The current MVP demonstrates real-time data synchronization using Cloud Firestore, forming the foundation for a community-driven route intelligence platform.
-
----
-
-## Current MVP Scope
-
-The present implementation focuses on:
-
-- Firebase integration with Flutter  
-- Real-time data updates using Cloud Firestore  
-- Reactive UI using StreamBuilder  
-- Scalable backend foundation for future route intelligence features  
-
-Future iterations will expand into route safety scoring, user reviews, and personalized route recommendations.
-
----
+- Firebase Authentication (email/password + Google sign-in)
+- Cloud Firestore-backed user data and route data
+- Responsive Flutter UI for web and mobile
+- Google Maps integration
+- Route/safety-oriented screens and services
 
 ## Tech Stack
 
-- Flutter  
-- Dart  
-- Firebase Core  
-- Cloud Firestore  
+- Flutter (Dart)
+- Firebase Core
 - Firebase Authentication
+- Cloud Firestore
+- Firebase Storage
+- Provider state management
+- Google Maps Flutter
 
----
+## Current Project Structure
 
-## Firebase Integration (Assignment Scope)
-
-This sprint focuses on integrating Firebase as the backend for SafeStride’s mobile experience. The goal is to demonstrate real-time data synchronization and a scalable cloud-connected architecture using Flutter and Firebase.
-
-### What will be Implemented
-
-- Firebase project setup and app registration  
-- FlutterFire configuration  
-- Firebase initialization in the Flutter app  
-- Cloud Firestore integration  
-- Real-time UI updates using StreamBuilder  
-
----
-
-## Real-Time Data Flow
-
-The application uses Cloud Firestore’s snapshot streams to keep the UI in sync with the database.
-
-Flow:
-
-1. User taps the add button  
-2. A new document is written to Firestore  
-3. Firestore emits a real-time update  
-4. StreamBuilder rebuilds the affected UI  
-5. Updated data appears instantly without refresh  
-
-This demonstrates the reactive and real-time capabilities required for SafeStride’s future community-driven features.
-
----
-
-## Demo
-
-![alt text](image.png)
-
----
-
-## Reflection
-
-Firebase significantly reduces backend complexity by providing authentication, real-time database capabilities, and scalable infrastructure out of the box. This allows SafeStride to focus on delivering a responsive, community-powered routing experience while maintaining a production-ready foundation.
-
-## 📁 Project Structure
-
-```
+```text
 lib/
-├── main.dart
-├── firebase_options.dart
-├── screens/
-       ├──welcome_screen.dart 
-├── widgets/
-       ├──custom_button.dart
-├── models/
-├── services/
+       main.dart
+       firebase_options.dart
+       config/
+       constants/
+       components/
+       controllers/
+       models/
+       providers/
+       screens/
+       services/
+       widgets/
+docs/
+       GOOGLE_SIGNIN_SETUP.md
+       GOOGLE_SIGNIN_IMPLEMENTATION.md
+       PROJECT_STRUCTURE.md
+       QUICK_REFERENCE.md
+       ...
 ```
 
----
+## Prerequisites
 
-## 🧩 Purpose of Each Directory
+- Flutter SDK installed and on PATH
+- Android Studio / Android SDK (for Android run)
+- Chrome (for web run)
+- Firebase project configured
 
-- **main.dart** — Entry point of the app and root configuration  
-- **screens/** — Full UI pages (each file = one screen)  
-- **widgets/** — Reusable UI components  
-- **models/** — Data structures and JSON mapping  
-- **services/** — Firebase/API interaction layer  
-- **utils/** — Helper functions, constants, and validators  
+## Environment Configuration
 
----
+This project loads variables from `.env`.
 
-## 🏗️ How This Supports Modular Design
+Required keys:
 
-This structure separates UI, data, and service logic into independent layers.  
-It improves readability, enables code reuse, and makes the app easier to scale and maintain as new features are added.
-
----
-
-## 🧷 Naming Conventions
-
-- **Files:** `snake_case.dart` → `welcome_screen.dart`  
-- **Classes:** `PascalCase` → `WelcomeScreen`  
-- **Variables/Functions:** `camelCase` → `isLoading`, `fetchRoutes()`  
-- **Widgets:** Screens end with `Screen`; reusable widgets have descriptive names.
-
----
-
-## 🎯 Why This Matters
-
-A consistent structure and naming convention keeps the codebase clean, scalable, and team-friendly for future development.
-
----
-
-## 📚 Documentation
-
-For additional documentation, see the [docs](./docs) folder:
-
-- [Flutter Fundamentals README](./docs/flutter_fundamentals_README.md) - Flutter widget tree and reactive UI concepts
-- [Stateless vs Stateful Widgets](./docs/STATELESS_STATEFUL_WIDGETS.md) - Understanding widget types with practical implementation
-- [Project Structure](./docs/PROJECT_STRUCTURE.md) - Project structure overview
-- [Navigation Implementation](./docs/NAVIGATION_IMPLEMENTATION.md) - Navigation setup guide
-- [Landing Page Setup](./docs/LANDING_PAGE_SETUP.md) - Landing page configuration
-- [Quick Reference](./docs/QUICK_REFERENCE.md) - Quick reference guide
-
----
-# To run using .env
-```bash 
-flutter run -d chrome --dart-define-from-file=.env
+```env
+MAPS_API_KEY=YOUR_MAPS_API_KEY
+GOOGLE_ANDROID_CLIENT_ID=YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com
+GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
 ```
+
+Notes:
+
+- Do not put OAuth client secret in Flutter frontend code.
+- `.env` is included as a Flutter asset via `pubspec.yaml`.
+
+## Firebase Configuration
+
+The app is currently wired to Firebase project:
+
+- `projectId`: `safestride-ed8a1`
+- Config source: `lib/firebase_options.dart`
+
+If you use another project, regenerate `firebase_options.dart` with FlutterFire CLI.
+
+## Google Sign-In Setup
+
+### Firebase Console
+
+In Firebase project `safestride-ed8a1`:
+
+1. Go to Authentication -> Sign-in method.
+2. Enable Google provider.
+3. Set support email and save.
+4. In Authentication -> Settings -> Authorized domains, ensure:
+        - `localhost`
+        - `127.0.0.1` (recommended)
+
+### Google Cloud Console (Web OAuth)
+
+Create OAuth Client ID of type Web application and add:
+
+- Authorized JavaScript origins:
+       - `http://localhost:59562`
+       - `http://127.0.0.1:59562`
+- Authorized redirect URIs (if required by your setup):
+       - `http://localhost:59562`
+       - `http://localhost:59562/`
+       - `http://127.0.0.1:59562`
+       - `http://127.0.0.1:59562/`
+
+Use the resulting Web client ID in `GOOGLE_WEB_CLIENT_ID`.
+
+## Run Commands
+
+### Install dependencies
+
+```bash
+flutter pub get
+```
+
+### Run on Web (fixed port for OAuth stability)
+
+```bash
+flutter run -d chrome --web-port 59562
+```
+
+### Run on Android emulator/device
+
+```bash
+flutter run -d emulator-5554
+```
+
+If no Android devices are shown:
+
+```bash
+flutter emulators --launch Medium_Phone_API_36.1
+flutter devices
+```
+
+## Troubleshooting
+
+### Error: Google sign-in is not enabled in Firebase Authentication
+
+Enable Google provider in Firebase Authentication for the exact project in `lib/firebase_options.dart`.
+
+### Error: redirect_uri_mismatch
+
+- Run web on fixed port `59562`.
+- Ensure origins/redirects in Google Console match that port.
+
+### Error: unauthorized-domain
+
+Add `localhost` under Firebase Authentication authorized domains.
+
+## Development Notes
+
+- Main app entrypoint: `lib/main.dart`
+- Auth logic: `lib/services/auth_service.dart`
+- Login screen: `lib/screens/login/login_screen.dart`
+- Signup screen: `lib/screens/signup_screen.dart`
+
+## Additional Documentation
+
+See `docs/` for detailed guides:
+
+- `docs/GOOGLE_SIGNIN_SETUP.md`
+- `docs/GOOGLE_SIGNIN_IMPLEMENTATION.md`
+- `docs/PROJECT_STRUCTURE.md`
+- `docs/QUICK_REFERENCE.md`
+
+## License
+
+Internal / coursework project (update as needed).
